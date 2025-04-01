@@ -1,14 +1,27 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import Logout from '../auth/Logout';
+import { scrollToElement, handleHashLinkClick } from '../../utils/scrollUtils';
 
 const UserLayout = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const user = JSON.parse(localStorage.getItem('user'));
+
+  // Handle hash links when the component mounts or location changes
+  useEffect(() => {
+    // Check if there's a hash in the URL
+    if (location.hash) {
+      // Wait a bit for the page to fully render before scrolling
+      setTimeout(() => {
+        scrollToElement(location.hash.substring(1));
+      }, 100);
+    }
+  }, [location]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -25,8 +38,26 @@ const UserLayout = ({ children }) => {
             <nav className="hidden md:flex space-x-8">
               <Link to="/products" className="text-gray-600 hover:text-blue-600">Products</Link>
               <Link to="/categories" className="text-gray-600 hover:text-blue-600">Categories</Link>
-              <Link to="/about" className="text-gray-600 hover:text-blue-600">About Us</Link>
-              <Link to="/contact" className="text-gray-600 hover:text-blue-600">Contact</Link>
+              <a
+                href="#about-us"
+                className="text-gray-600 hover:text-blue-600 cursor-pointer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleHashLinkClick('#about-us', navigate, location.pathname);
+                }}
+              >
+                About Us
+              </a>
+              <a
+                href="#contact"
+                className="text-gray-600 hover:text-blue-600 cursor-pointer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleHashLinkClick('#contact', navigate, location.pathname);
+                }}
+              >
+                Contact
+              </a>
             </nav>
             
             {/* User Menu */}
@@ -109,20 +140,28 @@ const UserLayout = ({ children }) => {
               >
                 Categories
               </Link>
-              <Link 
-                to="/about" 
-                className="block py-2 text-gray-600 hover:text-blue-600"
-                onClick={() => setIsMenuOpen(false)}
+              <a
+                href="#about-us"
+                className="block py-2 text-gray-600 hover:text-blue-600 cursor-pointer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setIsMenuOpen(false);
+                  handleHashLinkClick('#about-us', navigate, location.pathname);
+                }}
               >
                 About Us
-              </Link>
-              <Link 
-                to="/contact" 
-                className="block py-2 text-gray-600 hover:text-blue-600"
-                onClick={() => setIsMenuOpen(false)}
+              </a>
+              <a
+                href="#contact"
+                className="block py-2 text-gray-600 hover:text-blue-600 cursor-pointer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setIsMenuOpen(false);
+                  handleHashLinkClick('#contact', navigate, location.pathname);
+                }}
               >
                 Contact
-              </Link>
+              </a>
             </nav>
           )}
         </div>
@@ -148,8 +187,30 @@ const UserLayout = ({ children }) => {
               <ul className="space-y-2">
                 <li><Link to="/products" className="text-gray-400 hover:text-white">Products</Link></li>
                 <li><Link to="/categories" className="text-gray-400 hover:text-white">Categories</Link></li>
-                <li><Link to="/about" className="text-gray-400 hover:text-white">About Us</Link></li>
-                <li><Link to="/contact" className="text-gray-400 hover:text-white">Contact</Link></li>
+                <li>
+                  <a
+                    href="#about-us"
+                    className="text-gray-400 hover:text-white cursor-pointer"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleHashLinkClick('#about-us', navigate, location.pathname);
+                    }}
+                  >
+                    About Us
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#contact"
+                    className="text-gray-400 hover:text-white cursor-pointer"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleHashLinkClick('#contact', navigate, location.pathname);
+                    }}
+                  >
+                    Contact
+                  </a>
+                </li>
               </ul>
             </div>
             <div>

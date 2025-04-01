@@ -273,6 +273,181 @@ const Home = () => {
         </div>
       </section>
 
+      {/* About Us Section */}
+      <section className="py-12 bg-white" id="about-us">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900">About BlueMedix</h2>
+            <p className="text-gray-600 mt-2">Your trusted partner in healthcare supplies since 2010</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+            <div>
+              <img
+                src="https://images.unsplash.com/photo-1579684385127-1ef15d508118?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+                alt="BlueMedix Team"
+                className="rounded-lg shadow-lg w-full h-auto"
+              />
+            </div>
+            <div>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-4">Our Mission</h3>
+              <p className="text-gray-600 mb-6">
+                At BlueMedix, our mission is to provide high-quality medical supplies and equipment to healthcare professionals and individuals at competitive prices. We believe that access to quality healthcare products should be simple, affordable, and reliable.
+              </p>
+
+              <h3 className="text-2xl font-semibold text-gray-800 mb-4">Our Story</h3>
+              <p className="text-gray-600 mb-6">
+                Founded in 2010, BlueMedix began as a small family-owned business with a passion for improving healthcare accessibility. Over the years, we've grown into a nationwide network of franchises, serving thousands of customers while maintaining our commitment to quality and customer satisfaction.
+              </p>
+
+              <h3 className="text-2xl font-semibold text-gray-800 mb-4">Our Values</h3>
+              <ul className="text-gray-600 list-disc pl-5 space-y-2">
+                <li>Quality: We source only the best products from trusted manufacturers</li>
+                <li>Integrity: We operate with honesty and transparency in all our dealings</li>
+                <li>Service: We put our customers first and strive to exceed expectations</li>
+                <li>Innovation: We continuously seek better ways to serve our customers</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Information Section */}
+      <section className="py-12 bg-gray-50" id="contact">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900">Contact Us</h2>
+            <p className="text-gray-600 mt-2">We're here to help with any questions or concerns</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-white p-6 rounded-lg shadow-md text-center">
+              <div className="text-blue-600 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Phone Support</h3>
+              <p className="text-gray-600 mb-2">
+                Customer Service: <a href="tel:+18001234567" className="text-blue-600 hover:underline">1-800-123-4567</a>
+              </p>
+              <p className="text-gray-600">
+                Technical Support: <a href="tel:+18009876543" className="text-blue-600 hover:underline">1-800-987-6543</a>
+              </p>
+              <p className="text-gray-500 text-sm mt-2">
+                Monday-Friday: 8am-8pm EST<br />
+                Saturday: 9am-5pm EST
+              </p>
+            </div>
+
+            <div className="bg-white p-6 rounded-lg shadow-md text-center">
+              <div className="text-blue-600 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Email Us</h3>
+              <p className="text-gray-600 mb-2">
+                General Inquiries: <a href="mailto:info@bluemedix.com" className="text-blue-600 hover:underline">info@bluemedix.com</a>
+              </p>
+              <p className="text-gray-600 mb-2">
+                Customer Support: <a href="mailto:support@bluemedix.com" className="text-blue-600 hover:underline">support@bluemedix.com</a>
+              </p>
+              <p className="text-gray-600">
+                Business Development: <a href="mailto:business@bluemedix.com" className="text-blue-600 hover:underline">business@bluemedix.com</a>
+              </p>
+              <p className="text-gray-500 text-sm mt-2">
+                We typically respond within 24 hours
+              </p>
+            </div>
+
+            <div className="bg-white p-6 rounded-lg shadow-md text-center">
+              <div className="text-blue-600 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Visit Us</h3>
+              <p className="text-gray-600 mb-2">
+                BlueMedix Headquarters<br />
+                123 Medical Plaza, Suite 400<br />
+                New Delhi, Delhi 110001<br />
+                India
+              </p>
+              <p className="text-gray-500 text-sm mt-2">
+                Office Hours: Monday-Friday 9am-5pm
+              </p>
+              <a
+                href="https://maps.google.com/?q=New+Delhi+India"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block mt-4 text-blue-600 hover:underline"
+              >
+                Get Directions
+              </a>
+            </div>
+          </div>
+
+          <div className="mt-12 bg-white p-6 rounded-lg shadow-md">
+            <h3 className="text-xl font-semibold mb-4 text-center">Send Us a Message</h3>
+            <form className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Your Name</label>
+                <input
+                  type="text"
+                  id="name"
+                  className="w-full p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="John Doe"
+                />
+              </div>
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                <input
+                  type="email"
+                  id="email"
+                  className="w-full p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="john@example.com"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                <input
+                  type="text"
+                  id="subject"
+                  className="w-full p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="How can we help you?"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                <textarea
+                  id="message"
+                  rows="4"
+                  className="w-full p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Please provide details about your inquiry..."
+                ></textarea>
+              </div>
+              <div className="md:col-span-2 text-center">
+                <button
+                  type="submit"
+                  className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md text-lg font-medium"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    // Show a success message
+                    toast.success("Thank you for your message! We'll get back to you soon.");
+                    // Clear the form
+                    e.target.closest('form').reset();
+                  }}
+                >
+                  Send Message
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
       {/* Call to Action */}
       <section className="py-12 bg-blue-600 text-white">
         <div className="container mx-auto px-4 text-center">

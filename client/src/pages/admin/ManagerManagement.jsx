@@ -232,8 +232,8 @@ const ManagerManagement = () => {
       }
 
       console.log('Sending manager update data:', managerData);
-      
-      const response = await axios.put(
+
+      const response = await axios.patch(
         `${process.env.REACT_APP_API_URL}/api/users/${currentManager._id}`,
         managerData,
         {
@@ -686,7 +686,7 @@ const ManagerManagement = () => {
                   required
                   className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-              </div>
+              </div> 
               <div className="mb-4">
                 <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
                   Password *
@@ -731,7 +731,7 @@ const ManagerManagement = () => {
                     <option key={franchise._id} value={franchise._id}>
                       {franchise.name} - {franchise.location}
                     </option>
-                  ))}
+                  ))} 
                 </select>
               </div>
               <div className="flex justify-end space-x-2">

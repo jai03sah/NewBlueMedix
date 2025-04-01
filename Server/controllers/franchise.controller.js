@@ -168,7 +168,7 @@ export const getFranchiseById = async (req, res) => {
 export const updateFranchise = async (req, res) => {
   try {
     const { franchiseId } = req.params;
-    const { name, address, contactNumber, email, isActive } = req.body;
+    const { name, address, contactNumber, email, isActive, manager } = req.body;
 
     const franchise = await Franchise.findById(franchiseId);
     if (!franchise) {
@@ -181,6 +181,51 @@ export const updateFranchise = async (req, res) => {
     if (contactNumber) franchise.contactNumber = contactNumber;
     if (email) franchise.email = email;
     if (isActive !== undefined) franchise.isActive = isActive;
+
+    // Handle manager assignment
+    if (manager !== undefined) {
+      // If current manager exists, remove franchise association
+      if (franchise.orderManager) {
+        const currentManager = await User.findById(franchise.orderManager);
+        if (currentManager) {
+          currentManager.franchise = null;
+          await currentManager.save();
+        }
+      }
+
+      // If new manager is provided, update associations
+      if (manager && manager !== '') {
+        // Check if manager exists and is a manager
+        const newManager = await User.findById(manager);
+        if (!newManager) {
+          return res.status(404).json({ success: false, message: 'Manager not found' });
+        }
+
+        if (newManager.role !== 'orderManager') {
+          return res.status(400).json({ success: false, message: 'User is not a manager' });
+        }
+
+        // If manager is already assigned to another franchise, remove that assignment
+        if (newManager.franchise && newManager.franchise.toString() !== franchiseId) {
+          const previousFranchise = await Franchise.findById(newManager.franchise);
+          if (previousFranchise && previousFranchise.orderManager &&
+              previousFranchise.orderManager.toString() === manager) {
+            previousFranchise.orderManager = null;
+            await previousFranchise.save();
+          }
+        }
+
+        // Update manager with franchise
+        newManager.franchise = franchiseId;
+        await newManager.save();
+
+        // Update franchise with manager
+        franchise.orderManager = manager;
+      } else {
+        // If no manager is provided, remove the association
+        franchise.orderManager = null;
+      }
+    }
 
     await franchise.save();
 

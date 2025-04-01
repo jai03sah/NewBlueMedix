@@ -18,11 +18,91 @@ const ManagerInventory = () => {
     quantity: 0,
     lowStockThreshold: 0
   });
+  const [viewMode, setViewMode] = useState('list'); // 'list' or 'category'
+  const [noProductsAssigned, setNoProductsAssigned] = useState(false); // Flag to check if admin has assigned products
 
+  // Fetch categories and check product availability on component mount
+  useEffect(() => {
+    fetchCategories();
+    checkProductAvailability();
+  }, []);
+
+  // Fetch products when filters change
   useEffect(() => {
     fetchProducts();
-    fetchCategories();
-  }, [categoryFilter, searchQuery]); // Removed pagination and sorting as API doesn't support them yet
+  }, [categoryFilter, searchQuery, currentPage, sortBy, sortOrder]);
+
+  // Check if there are any products in the system
+  const checkProductAvailability = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user'));
+
+      if (!token || !user || !user.franchise) {
+        return;
+      }
+
+      // First check if there are any products assigned to this franchise
+      const franchiseStockResponse = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/franchise-stock/franchise/${user.franchise}?limit=1`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      if (franchiseStockResponse.data && franchiseStockResponse.data.success) {
+        const stockItems = franchiseStockResponse.data.stockItems || [];
+
+        if (stockItems.length === 0) {
+          // If no products assigned to franchise, check if there are any products in the system at all
+          const productsResponse = await axios.get(
+            `${process.env.REACT_APP_API_URL}/api/products?limit=1`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            }
+          );
+
+          if (productsResponse.data && productsResponse.data.success) {
+            if (productsResponse.data.products && productsResponse.data.products.length > 0) {
+              // Products exist in system but none assigned to this franchise
+              setNoProductsAssigned(true);
+              console.log('Products exist in system but none assigned to this franchise');
+            } else {
+              // No products in the system at all
+              setNoProductsAssigned(true);
+              console.log('No products available in the system');
+            }
+          }
+        } else {
+          // Products are assigned to this franchise
+          setNoProductsAssigned(false);
+          console.log('Products are assigned to this franchise');
+        }
+      }
+
+      // Also check if there are any categories
+      const categoriesResponse = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/categories`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      if (categoriesResponse.data && categoriesResponse.data.success) {
+        const fetchedCategories = categoriesResponse.data.categories || [];
+        console.log('Initial categories check:', fetchedCategories.length, 'categories found');
+      }
+    } catch (error) {
+      console.error('Error checking product availability:', error);
+      // Don't show toast for this secondary request
+    }
+  };
 
   const fetchProducts = async () => {
     try {
@@ -47,14 +127,34 @@ const ManagerInventory = () => {
 
       // Build query parameters
       let url = `${process.env.REACT_APP_API_URL}/api/franchise-stock/franchise/${user.franchise}`;
+      const queryParams = [];
 
       // Add search parameter if provided
       if (searchQuery.trim()) {
-        url += `?search=${encodeURIComponent(searchQuery.trim())}`;
+        queryParams.push(`search=${encodeURIComponent(searchQuery.trim())}`);
       }
 
-      // Add low stock filter if needed
-      // url += `${url.includes('?') ? '&' : '?'}lowStock=true`;
+      // Add category filter if selected
+      if (categoryFilter !== 'all') {
+        queryParams.push(`category=${encodeURIComponent(categoryFilter)}`);
+      }
+
+      // Add sorting parameters
+      if (sortBy) {
+        queryParams.push(`sortBy=${encodeURIComponent(sortBy)}`);
+        queryParams.push(`sortOrder=${encodeURIComponent(sortOrder)}`);
+      }
+
+      // Add pagination parameters
+      queryParams.push(`page=${currentPage}`);
+      queryParams.push(`limit=20`);
+
+      // Combine all query parameters
+      if (queryParams.length > 0) {
+        url += `?${queryParams.join('&')}`;
+      }
+
+      console.log('Fetching inventory with URL:', url);
 
 
       const response = await axios.get(url, {
@@ -67,21 +167,101 @@ const ManagerInventory = () => {
         // The API returns stockItems array with populated product details
         const stockItems = response.data.stockItems || [];
 
+        // Check if there are any products assigned to this franchise
+        if (stockItems.length === 0 && !searchQuery && categoryFilter === 'all') {
+          // Make an additional check to see if there are products in the system
+          try {
+            const productsResponse = await axios.get(
+              `${process.env.REACT_APP_API_URL}/api/products?limit=1`,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`
+                }
+              }
+            );
+
+            if (productsResponse.data && productsResponse.data.success) {
+              // If there are products in the system but none assigned to this franchise
+              if (productsResponse.data.products && productsResponse.data.products.length > 0) {
+                setNoProductsAssigned(true);
+                setProducts([]);
+                setTotalPages(1);
+                console.log('Products exist in system but none assigned to this franchise');
+              } else {
+                // No products in the system at all
+                setNoProductsAssigned(true);
+                setProducts([]);
+                setTotalPages(1);
+                console.log('No products in the system at all');
+              }
+            }
+          } catch (error) {
+            console.error('Error checking product availability:', error);
+            // Default to assuming no products assigned
+            setNoProductsAssigned(true);
+            setProducts([]);
+            setTotalPages(1);
+          }
+          return;
+        } else {
+          setNoProductsAssigned(false);
+        }
+
         // Transform the data to match our component's expected format
-        const transformedProducts = stockItems.map(item => ({
-          _id: item.product._id,
-          name: item.product.name,
-          price: item.product.price,
-          image: item.product.image,
-          category: item.product.category,
-          quantity: item.quantity,
-          lowStockThreshold: item.product.lowStockThreshold || 5,
-          stockId: item._id, // Keep the stock ID for updates
-          lastUpdated: item.lastUpdated
+        const transformedProducts = await Promise.all(stockItems.map(async (item) => {
+          // Ensure we have complete category information
+          let categoryInfo = item.product.category;
+
+          // If category is just an ID, fetch the full category information
+          if (categoryInfo && typeof categoryInfo === 'string') {
+            try {
+              const categoryResponse = await axios.get(
+                `${process.env.REACT_APP_API_URL}/api/categories/${categoryInfo}`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`
+                  }
+                }
+              );
+
+              if (categoryResponse.data && categoryResponse.data.success) {
+                categoryInfo = categoryResponse.data.category;
+              }
+            } catch (error) {
+              console.error('Error fetching category details:', error);
+              // Keep the category ID if we can't fetch details
+            }
+          }
+
+          return {
+            _id: item.product._id,
+            name: item.product.name,
+            price: item.product.price,
+            image: item.product.image,
+            category: categoryInfo, // Use the full category object
+            quantity: item.quantity,
+            lowStockThreshold: item.product.lowStockThreshold || 5,
+            stockId: item._id, // Keep the stock ID for updates
+            lastUpdated: item.lastUpdated
+          };
         }));
 
+        // Set the products directly - we're already filtering by category in the API call
         setProducts(transformedProducts);
-        setTotalPages(1); // API doesn't support pagination yet
+
+        // Set total pages from response if available, otherwise default to 1
+        if (response.data.totalPages) {
+          setTotalPages(response.data.totalPages);
+        } else {
+          setTotalPages(Math.ceil(transformedProducts.length / 20));
+        }
+
+        console.log('Loaded products:', transformedProducts.length);
+        console.log('Category filter:', categoryFilter);
+
+        // Log product categories for debugging
+        const categoryIds = transformedProducts.map(p => p.category?._id).filter(Boolean);
+        console.log('Product category IDs:', categoryIds);
 
         if (transformedProducts.length === 0 && currentPage > 1) {
           // If we get an empty page and we're not on page 1, go back to page 1
@@ -102,7 +282,7 @@ const ManagerInventory = () => {
   const fetchCategories = async () => {
     try {
       const token = localStorage.getItem('token');
-      
+
       if (!token) {
         return;
       }
@@ -117,7 +297,27 @@ const ManagerInventory = () => {
       );
 
       if (response.data && response.data.success) {
-        setCategories(response.data.categories || []);
+        const fetchedCategories = response.data.categories || [];
+        setCategories(fetchedCategories);
+        console.log('Fetched categories:', fetchedCategories);
+
+        // Try to get product counts by category for better debugging
+        try {
+          const statsResponse = await axios.get(
+            `${process.env.REACT_APP_API_URL}/api/categories/stats/products-count`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            }
+          );
+
+          if (statsResponse.data && statsResponse.data.success) {
+            console.log('Category product counts:', statsResponse.data.categoriesWithCount);
+          }
+        } catch (statsError) {
+          console.error('Error fetching category stats:', statsError);
+        }
       }
     } catch (error) {
       console.error('Fetch categories error:', error);
@@ -167,6 +367,62 @@ const ManagerInventory = () => {
       error.code === 'ECONNABORTED' ||
       (error.response && (error.response.status === 0 || error.response.status === 502 || error.response.status === 503 || error.response.status === 504))
     );
+  };
+
+  // Group products by category
+  const getProductsByCategory = () => {
+    // Create a deep copy of the products array to avoid mutation issues
+    const productsCopy = JSON.parse(JSON.stringify(products));
+    const groupedProducts = {};
+
+    // First, create an entry for each category
+    categories.forEach(category => {
+      groupedProducts[category._id] = {
+        categoryInfo: category,
+        products: []
+      };
+    });
+
+    // Add an "Uncategorized" group
+    groupedProducts['uncategorized'] = {
+      categoryInfo: { _id: 'uncategorized', name: 'Uncategorized' },
+      products: []
+    };
+
+    // Now, add each product to its category group
+    productsCopy.forEach(product => {
+      console.log('Processing product:', product.name, 'Category:', product.category);
+
+      if (product.category && product.category._id) {
+        // Check if this category exists in our groupedProducts
+        if (groupedProducts[product.category._id]) {
+          groupedProducts[product.category._id].products.push(product);
+        } else {
+          console.log('Category not found in groupedProducts:', product.category._id);
+          // If category doesn't exist in our groups, add it
+          groupedProducts[product.category._id] = {
+            categoryInfo: {
+              _id: product.category._id,
+              name: product.category.name || 'Unknown Category'
+            },
+            products: [product]
+          };
+        }
+      } else {
+        // If product has no category
+        groupedProducts['uncategorized'].products.push(product);
+      }
+    });
+
+    console.log('Grouped products:', groupedProducts);
+
+    // Convert to array and sort categories by name
+    const result = Object.values(groupedProducts)
+      .filter(group => group.products.length > 0) // Only include categories with products
+      .sort((a, b) => a.categoryInfo.name.localeCompare(b.categoryInfo.name));
+
+    console.log('Categorized products:', result);
+    return result;
   };
 
   const handleSearch = (e) => {
@@ -321,6 +577,32 @@ const ManagerInventory = () => {
           </button>
         </div>
         <div className="flex space-x-2">
+          {/* View Mode Toggle */}
+          <div className="mr-4 flex items-center bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('list')}
+              className={`px-3 py-1 rounded-md text-sm ${viewMode === 'list'
+                ? 'bg-white shadow-sm text-green-700'
+                : 'text-gray-600 hover:text-gray-800'}`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 inline-block mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+              </svg>
+              List View
+            </button>
+            <button
+              onClick={() => setViewMode('category')}
+              className={`px-3 py-1 rounded-md text-sm ${viewMode === 'category'
+                ? 'bg-white shadow-sm text-green-700'
+                : 'text-gray-600 hover:text-gray-800'}`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 inline-block mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
+              </svg>
+              Category View
+            </button>
+          </div>
+
           <button
             onClick={() => fetchProducts()}
             className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded flex items-center"
@@ -374,6 +656,7 @@ const ManagerInventory = () => {
               onChange={(e) => {
                 setCategoryFilter(e.target.value);
                 setCurrentPage(1);
+                console.log('Category filter changed to:', e.target.value);
               }}
               className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
             >
@@ -384,6 +667,9 @@ const ManagerInventory = () => {
                 </option>
               ))}
             </select>
+            <div className="mt-2 text-xs text-gray-500">
+              {categories.length} categories available
+            </div>
           </div>
         </div>
       </div>
@@ -419,26 +705,66 @@ const ManagerInventory = () => {
         </div>
       ) : products.length === 0 ? (
         <div className="bg-white shadow-md rounded-lg p-8 text-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-          </svg>
-          <h2 className="text-xl font-semibold mt-4">No products found</h2>
-          <p className="text-gray-600 mt-2">
-            {categoryFilter !== 'all'
-              ? "There are no products in this category."
-              : searchQuery
-                ? `No products match "${searchQuery}"`
-                : "There are no products in your franchise inventory yet."}
-          </p>
+          {noProductsAssigned ? (
+            <>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <h2 className="text-xl font-semibold mt-4">No Products Available</h2>
+              <p className="text-gray-600 mt-2">
+                No products have been assigned to your franchise inventory by the administrator.
+              </p>
+              <div className="mt-6 bg-blue-50 border-l-4 border-blue-500 p-4 text-blue-700">
+                <p className="font-bold">What to do next:</p>
+                <ul className="list-disc list-inside mt-2 text-left">
+                  <li>Contact your administrator to request product assignments</li>
+                  <li>The admin needs to add products to the system and assign them to your franchise</li>
+                  <li>Once products are assigned, they will appear in your inventory</li>
+                  <li>You can then manage stock levels for your franchise</li>
+                </ul>
+              </div>
+              <div className="mt-4 p-4 bg-yellow-50 border-l-4 border-yellow-500 text-yellow-700">
+                <p className="font-bold">Important:</p>
+                <p className="mt-1">
+                  Your inventory will remain empty until the administrator assigns products to your franchise.
+                  You cannot add products directly - this must be done by an administrator.
+                </p>
+              </div>
+              <button
+                onClick={() => fetchProducts()}
+                className="mt-6 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded inline-flex items-center"
+              >
+                <svg className="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+                </svg>
+                Check Again
+              </button>
+            </>
+          ) : (
+            <>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+              </svg>
+              <h2 className="text-xl font-semibold mt-4">No products found</h2>
+              <p className="text-gray-600 mt-2">
+                {categoryFilter !== 'all'
+                  ? "There are no products in this category."
+                  : searchQuery
+                    ? `No products match "${searchQuery}"`
+                    : "There are no products in your franchise inventory yet."}
+              </p>
+            </>
+          )}
         </div>
-      ) : (
+      ) : viewMode === 'list' ? (
+        // List View
         <div className="bg-white shadow-md rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th 
-                    scope="col" 
+                  <th
+                    scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                     onClick={() => handleSort('name')}
                   >
@@ -454,8 +780,8 @@ const ManagerInventory = () => {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Category
                   </th>
-                  <th 
-                    scope="col" 
+                  <th
+                    scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                     onClick={() => handleSort('price')}
                   >
@@ -468,8 +794,8 @@ const ManagerInventory = () => {
                       )}
                     </div>
                   </th>
-                  <th 
-                    scope="col" 
+                  <th
+                    scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                     onClick={() => handleSort('quantity')}
                   >
@@ -500,8 +826,8 @@ const ManagerInventory = () => {
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10 bg-gray-100 rounded overflow-hidden">
                           {product.image && product.image.length > 0 ? (
-                            <img 
-                              src={product.image[0]} 
+                            <img
+                              src={product.image[0]}
                               alt={product.name}
                               className="h-full w-full object-cover"
                             />
@@ -527,7 +853,7 @@ const ManagerInventory = () => {
                       {product.category ? product.category.name : 'Uncategorized'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${product.price.toFixed(2)}
+                      ${product.price ? product.price.toFixed(2) : '0.00'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {editingProduct === product._id ? (
@@ -592,8 +918,156 @@ const ManagerInventory = () => {
               </tbody>
             </table>
           </div>
-          
-          {/* Pagination - Hidden until API supports pagination */}
+        </div>
+      ) : (
+        // Category View
+        <div className="space-y-8">
+          {getProductsByCategory().length === 0 ? (
+            <div className="bg-white shadow-md rounded-lg p-8 text-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h7" />
+              </svg>
+              <h2 className="text-xl font-semibold mt-4">No categorized products found</h2>
+              <p className="text-gray-600 mt-2">
+                There are no products with categories in your inventory.
+              </p>
+            </div>
+          ) : (
+            getProductsByCategory().map((categoryGroup) => (
+              <div key={categoryGroup.categoryInfo._id} className="bg-white shadow-md rounded-lg overflow-hidden">
+                <div className="bg-green-700 text-white px-6 py-3 flex justify-between items-center">
+                  <h3 className="text-lg font-semibold">{categoryGroup.categoryInfo.name}</h3>
+                  <span className="bg-white text-green-700 text-xs font-bold px-2 py-1 rounded-full">
+                    {categoryGroup.products.length} {categoryGroup.products.length === 1 ? 'Product' : 'Products'}
+                  </span>
+                </div>
+
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Product
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Price
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Quantity
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Low Stock Threshold
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {categoryGroup.products.map((product) => (
+                      <tr key={product._id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-10 bg-gray-100 rounded overflow-hidden">
+                              {product.image && product.image.length > 0 ? (
+                                <img
+                                  src={product.image[0]}
+                                  alt={product.name}
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <div className="flex items-center justify-center h-full">
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                  </svg>
+                                </div>
+                              )}
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">
+                                {product.name}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                SKU: {product.sku || 'N/A'}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          ${product.price ? product.price.toFixed(2) : '0.00'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {editingProduct === product._id ? (
+                            <input
+                              type="number"
+                              name="quantity"
+                              min="0"
+                              value={editFormData.quantity}
+                              onChange={handleEditFormChange}
+                              className="w-20 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-green-500"
+                            />
+                          ) : (
+                            product.quantity || 0
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStockStatusClass(product)}`}>
+                            {getStockStatusText(product)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {editingProduct === product._id ? (
+                            <input
+                              type="number"
+                              name="lowStockThreshold"
+                              min="1"
+                              value={editFormData.lowStockThreshold}
+                              onChange={handleEditFormChange}
+                              className="w-20 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-green-500"
+                            />
+                          ) : (
+                            product.lowStockThreshold || 5
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          {editingProduct === product._id ? (
+                            <div className="flex justify-end space-x-2">
+                              <button
+                                onClick={() => updateInventory(product._id)}
+                                className="text-green-600 hover:text-green-900"
+                              >
+                                Save
+                              </button>
+                              <button
+                                onClick={cancelEditing}
+                                className="text-red-600 hover:text-red-900"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => startEditing(product)}
+                              className="text-green-600 hover:text-green-900"
+                            >
+                              Update
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )))}
+        </div>
+      )}
+
+          { /* Pagination - Hidden until API supports pagination */}
           {/* {totalPages > 1 && (
             <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
               <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
@@ -682,9 +1156,6 @@ const ManagerInventory = () => {
             </p>
           </div>
         </div>
-      )}
-    </div>
-  );
-};
+      )};
 
 export default ManagerInventory;

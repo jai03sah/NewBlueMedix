@@ -44,7 +44,7 @@ export const getUserById = async (req, res) => {
 export const updateUserProfile = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { name, phone, img_url } = req.body;
+    const { name, phone, img_url, franchiseId, password, email } = req.body;
 
     // Check if user exists
     const user = await User.findById(userId);
@@ -62,6 +62,45 @@ export const updateUserProfile = async (req, res) => {
     if (phone) user.phone = phone;
     if (img_url) user.img_url = img_url;
 
+    // Allow admin to update email
+    if (email && req.user.role === 'admin') {
+      // Check if email is already in use by another user
+      const existingUser = await User.findOne({ email, _id: { $ne: userId } });
+      if (existingUser) {
+        return res.status(400).json({ success: false, message: 'Email is already in use by another user' });
+      }
+      user.email = email;
+    }
+
+    // Update password if provided (admin only or self)
+    if (password) {
+      if (req.user.role === 'admin' || req.user._id.toString() === userId) {
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+        user.password = hashedPassword;
+      }
+    }
+
+    // Handle franchise assignment for managers
+    if (franchiseId !== undefined && req.user.role === 'admin') {
+      // If franchiseId is empty string, remove franchise assignment
+      if (franchiseId === '') {
+        user.franchise = null;
+      } else {
+        // Verify franchise exists
+        const franchise = await Franchise.findById(franchiseId);
+        if (!franchise) {
+          return res.status(404).json({ success: false, message: 'Franchise not found' });
+        }
+        user.franchise = franchiseId;
+
+        // Update franchise with manager ID if user is an orderManager
+        if (user.role === 'orderManager') {
+          await Franchise.findByIdAndUpdate(franchiseId, { orderManager: user._id });
+        }
+      }
+    }
+
     await user.save();
 
     return res.status(200).json({
@@ -73,7 +112,8 @@ export const updateUserProfile = async (req, res) => {
         email: user.email,
         phone: user.phone,
         img_url: user.img_url,
-        role: user.role
+        role: user.role,
+        franchise: user.franchise
       }
     });
   } catch (error) {

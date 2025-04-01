@@ -458,7 +458,7 @@ const FranchiseManagement = () => {
       },
       contactNumber: franchise.contactNumber || '',
       email: franchise.email || '',
-      manager: franchise.manager?._id || ''
+      manager: franchise.orderManager?._id || ''
     });
 
     setShowEditModal(true);
@@ -714,21 +714,21 @@ const FranchiseManagement = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {franchise.manager ? (
+                      {franchise.orderManager ? (
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-8 w-8">
-                            <img 
+                            <img
                               className="h-8 w-8 rounded-full"
-                              src={franchise.manager.img_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(franchise.manager.name)}`}
-                              alt={franchise.manager.name}
+                              src={franchise.orderManager.img_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(franchise.orderManager.name)}`}
+                              alt={franchise.orderManager.name}
                             />
                           </div>
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900">
-                              {franchise.manager.name}
+                              {franchise.orderManager.name}
                             </div>
                             <div className="text-sm text-gray-500">
-                              {franchise.manager.email}
+                              {franchise.orderManager.email}
                             </div>
                           </div>
                         </div>

@@ -46,14 +46,20 @@ const AdminLayout = ({ children }) => {
           >
             Franchise Management
           </Link>
-          <Link 
-            to="/admin/products" 
+          <Link
+            to="/admin/products"
             className={`block py-2.5 px-4 rounded transition duration-200 ${isActive('/admin/products')}`}
           >
             Product Management
           </Link>
-          <Link 
-            to="/admin/orders" 
+          <Link
+            to="/admin/franchise-stock"
+            className={`block py-2.5 px-4 rounded transition duration-200 ${isActive('/admin/franchise-stock')}`}
+          >
+            Franchise Stock
+          </Link>
+          <Link
+            to="/admin/orders"
             className={`block py-2.5 px-4 rounded transition duration-200 ${isActive('/admin/orders')}`}
           >
             Order Management

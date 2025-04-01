@@ -79,10 +79,63 @@ const ManagerOrders = () => {
       });
 
       if (response.data && response.data.success) {
-        setOrders(response.data.orders || []);
+        // Log the first order to see its structure
+        if (response.data.orders && response.data.orders.length > 0) {
+          console.log('First order structure:', response.data.orders[0]);
+
+          // Debug the customer data structure in the first order
+          const firstOrder = response.data.orders[0];
+          console.log('Customer data in first order:', {
+            user: firstOrder.user,
+            user_id: firstOrder.user_id,
+            customer: firstOrder.customer,
+            customerId: firstOrder.customerId,
+            userId: firstOrder.userId
+          });
+        }
+
+        // Map the orders to ensure customer information is properly formatted
+        const formattedOrders = (response.data.orders || []).map(order => {
+          // Debug each order's structure
+          debugOrderStructure(order);
+
+          // Create a new order object with consistent customer information
+          const formattedOrder = { ...order };
+
+          // Check all possible customer data fields
+          if (order.customer) {
+            // If customer field exists, make sure it's properly structured
+            formattedOrder.user_id = typeof order.customer === 'object' ? order.customer : {
+              name: typeof order.customer === 'string' ? order.customer : 'Unknown Customer',
+              _id: typeof order.customer === 'string' ? order.customer : 'unknown'
+            };
+          } else if (order.user_id && typeof order.user_id === 'string') {
+            // If user_id is a string (just the ID), create a name object
+            formattedOrder.user_id = {
+              name: 'Customer #' + order.user_id.substring(0, 8),
+              _id: order.user_id
+            };
+          } else if (order.user && typeof order.user === 'object') {
+            // If user is an object, map it to user_id for consistency
+            formattedOrder.user_id = order.user;
+          } else if (order.userId && typeof order.userId === 'object') {
+            // Check for userId variant
+            formattedOrder.user_id = order.userId;
+          } else if (order.customerId || order.customerName) {
+            // Handle other possible customer fields
+            formattedOrder.user_id = {
+              name: order.customerName || ('Customer #' + order.customerId?.substring(0, 8)) || 'Unknown Customer',
+              _id: order.customerId || 'unknown'
+            };
+          }
+
+          return formattedOrder;
+        });
+
+        setOrders(formattedOrders);
         setTotalPages(response.data.pagination?.pages || 1);
 
-        if (response.data.orders && response.data.orders.length === 0 && currentPage > 1) {
+        if (formattedOrders.length === 0 && currentPage > 1) {
           // If we get an empty page and we're not on page 1, go back to page 1
           setCurrentPage(1);
         }
@@ -231,6 +284,114 @@ const ManagerOrders = () => {
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
     return new Date(dateString).toLocaleDateString(undefined, options);
+  };
+
+  // Debug function to log customer information
+  const debugCustomerInfo = (order) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Order ID:', order._id);
+      console.log('Customer data:', {
+        user_id: order.user_id,
+        user: order.user,
+        customer: order.customer
+      });
+    }
+    return null;
+  };
+
+  // Helper function to get customer name from any available source
+  const getCustomerName = (order) => {
+    // Check all possible locations for customer name
+    if (order.user_id) {
+      if (typeof order.user_id === 'object') {
+        return order.user_id.name || order.user_id.fullName;
+      } else {
+        return order.user_id; // If it's just a string
+      }
+    }
+
+    if (order.user) {
+      if (typeof order.user === 'object') {
+        return order.user.name || order.user.fullName;
+      } else {
+        return order.user; // If it's just a string
+      }
+    }
+
+    if (order.customer) {
+      if (typeof order.customer === 'object') {
+        return order.customer.name || order.customer.fullName;
+      } else {
+        return order.customer; // If it's just a string
+      }
+    }
+
+    // Check other possible fields
+    return order.customerName || order.userName || order.userId || order.customerId || null;
+  };
+
+  // Helper function to get customer email from any available source
+  const getCustomerEmail = (order) => {
+    // Check all possible locations for customer email
+    if (order.user_id && typeof order.user_id === 'object') {
+      return order.user_id.email;
+    }
+
+    if (order.user && typeof order.user === 'object') {
+      return order.user.email;
+    }
+
+    if (order.customer && typeof order.customer === 'object') {
+      return order.customer.email;
+    }
+
+    // Check other possible fields
+    return order.customerEmail || order.userEmail || null;
+  };
+
+  // Helper function to get customer ID from any available source
+  const getCustomerId = (order) => {
+    // Check all possible locations for customer ID
+    if (order.user_id) {
+      if (typeof order.user_id === 'object') {
+        return order.user_id._id;
+      } else {
+        return order.user_id; // If it's just a string ID
+      }
+    }
+
+    if (order.user) {
+      if (typeof order.user === 'object') {
+        return order.user._id;
+      } else {
+        return order.user; // If it's just a string ID
+      }
+    }
+
+    if (order.customer) {
+      if (typeof order.customer === 'object') {
+        return order.customer._id;
+      } else {
+        return order.customer; // If it's just a string ID
+      }
+    }
+
+    // Check other possible fields
+    return order.customerId || order.userId || null;
+  };
+
+  // Debug function to log order structure
+  const debugOrderStructure = (order) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Order structure:', {
+        id: order._id,
+        user_id: order.user_id,
+        user: order.user,
+        customer: order.customer,
+        customerId: order.customerId,
+        userId: order.userId
+      });
+    }
   };
 
   // Get status badge color
@@ -519,6 +680,8 @@ const ManagerOrders = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {orders.map((order) => (
                   <tr key={order._id} className="hover:bg-gray-50">
+                    {/* Debug customer info in development */}
+                    {debugCustomerInfo(order)}
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       #{order._id.substring(order._id.length - 8)}
                     </td>
@@ -526,26 +689,54 @@ const ManagerOrders = () => {
                       {formatDate(order.createdAt)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {order.user ? (
+                      {/* Customer information cell with link to customer details */}
+                      {getCustomerId(order) ? (
+                        <Link to={`/manager/customers/${getCustomerId(order)}`} className="group">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-8 w-8">
+                              {/* Try to get the customer image from any available source */}
+                              <img
+                                className="h-8 w-8 rounded-full"
+                                src={
+                                  (order.user_id?.img_url || order.user?.img_url || order.customer?.img_url) ||
+                                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                    getCustomerName(order) || 'User'
+                                  )}`
+                                }
+                                alt={getCustomerName(order) || 'User'}
+                              />
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900 group-hover:text-green-600">
+                                {/* Display customer name */}
+                                {getCustomerName(order) || 'Unknown Customer'}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {/* Display customer email if available */}
+                                {getCustomerEmail(order) || 'No email available'}
+                              </div>
+                              <div className="text-xs text-green-600 mt-1">
+                                View Customer Profile
+                              </div>
+                            </div>
+                          </div>
+                        </Link>
+                      ) : (
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-8 w-8">
-                            <img 
-                              className="h-8 w-8 rounded-full"
-                              src={order.user.img_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(order.user.name)}`}
-                              alt={order.user.name}
-                            />
+                            <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs">
+                              N/A
+                            </div>
                           </div>
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900">
-                              {order.user.name}
+                              {getCustomerName(order) || 'Unknown Customer'}
                             </div>
                             <div className="text-sm text-gray-500">
-                              {order.user.email}
+                              {getCustomerEmail(order) || 'No email available'}
                             </div>
                           </div>
                         </div>
-                      ) : (
-                        <span className="text-gray-400">User unavailable</span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

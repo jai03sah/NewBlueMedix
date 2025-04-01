@@ -21,13 +21,17 @@ import CreateManager from './pages/admin/CreateManager';
 import OrderManagement from './pages/admin/OrderManagement';
 import ProductManagement from './pages/admin/ProductManagement';
 import FranchiseManagement from './pages/admin/FranchiseManagement';
+import FranchiseStockManagement from './pages/admin/FranchiseStockManagement';
 import Reports from './pages/admin/Reports';
 import AdminLogout from './pages/admin/Logout';
 
 // Manager Pages
 import ManagerDashboard from './pages/manager/Dashboard';
 import ManagerOrders from './pages/manager/Orders';
+import ManagerCustomers from './pages/manager/Customers';
+import CustomerDetails from './pages/manager/CustomerDetails';
 import ManagerInventory from './pages/manager/Inventory';
+import ManagerReports from './pages/manager/Reports';
 import ManagerLogout from './pages/manager/Logout';
 
 // User Pages
@@ -93,7 +97,7 @@ function App() {
     <Router>
       <ToastContainer position="top-right" autoClose={5000} />
       <Routes>
-        {/* Public Routes */}
+        {/* Public Routes */} 
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -108,13 +112,17 @@ function App() {
         <Route path="/admin/orders" element={<AdminRoute><OrderManagement /></AdminRoute>} />
         <Route path="/admin/products" element={<AdminRoute><ProductManagement /></AdminRoute>} />
         <Route path="/admin/franchises" element={<AdminRoute><FranchiseManagement /></AdminRoute>} />
+        <Route path="/admin/franchise-stock" element={<AdminRoute><FranchiseStockManagement /></AdminRoute>} />
         <Route path="/admin/reports" element={<AdminRoute><Reports /></AdminRoute>} />
         <Route path="/admin/logout" element={<AdminLogout />} />
 
         {/* Manager Routes */}
         <Route path="/manager/dashboard" element={<ManagerRoute><ManagerDashboard /></ManagerRoute>} />
         <Route path="/manager/orders" element={<ManagerRoute><ManagerOrders /></ManagerRoute>} />
+        <Route path="/manager/customers" element={<ManagerRoute><ManagerCustomers /></ManagerRoute>} />
+        <Route path="/manager/customers/:customerId" element={<ManagerRoute><CustomerDetails /></ManagerRoute>} />
         <Route path="/manager/inventory" element={<ManagerRoute><ManagerInventory /></ManagerRoute>} />
+        <Route path="/manager/reports" element={<ManagerRoute><ManagerReports /></ManagerRoute>} />
         <Route path="/manager/logout" element={<ManagerLogout />} />
 
         {/* Public Routes for Products and Categories */}
