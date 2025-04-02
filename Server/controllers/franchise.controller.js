@@ -1,6 +1,7 @@
 import Franchise from '../model/franchise.model.js';
 import User from '../model/user.model.js';
 import Order from '../model/order.model.js';
+import FranchiseStock from '../model/franchisestock.model.js';
 
 // Get all franchises for public access (no authentication required)
 export const getPublicFranchises = async (req, res) => {
@@ -379,8 +380,8 @@ export const getFranchiseStats = async (req, res) => {
     }
 
     // Check if user has permission to view franchise stats
-    if (req.user.role === 'orderManager' && 
-        req.user.franchise && 
+    if (req.user.role === 'orderManager' &&
+        req.user.franchise &&
         req.user.franchise.toString() !== franchiseId) {
       return res.status(403).json({ success: false, message: 'Not authorized to view stats for this franchise' });
     }
@@ -389,38 +390,38 @@ export const getFranchiseStats = async (req, res) => {
     const totalOrders = await Order.countDocuments({ franchise: franchiseId });
 
     // Get orders by status
-    const pendingOrders = await Order.countDocuments({ 
-      franchise: franchiseId, 
-      deliverystatus: 'pending' 
+    const pendingOrders = await Order.countDocuments({
+      franchise: franchiseId,
+      deliverystatus: 'pending'
     });
-    
-    const acceptedOrders = await Order.countDocuments({ 
-      franchise: franchiseId, 
-      deliverystatus: 'accepted' 
+
+    const acceptedOrders = await Order.countDocuments({
+      franchise: franchiseId,
+      deliverystatus: 'accepted'
     });
-    
-    const dispatchedOrders = await Order.countDocuments({ 
-      franchise: franchiseId, 
-      deliverystatus: 'dispatched' 
+
+    const dispatchedOrders = await Order.countDocuments({
+      franchise: franchiseId,
+      deliverystatus: 'dispatched'
     });
-    
-    const deliveredOrders = await Order.countDocuments({ 
-      franchise: franchiseId, 
-      deliverystatus: 'delivered' 
+
+    const deliveredOrders = await Order.countDocuments({
+      franchise: franchiseId,
+      deliverystatus: 'delivered'
     });
-    
-    const cancelledOrders = await Order.countDocuments({ 
-      franchise: franchiseId, 
-      deliverystatus: 'cancelled' 
+
+    const cancelledOrders = await Order.countDocuments({
+      franchise: franchiseId,
+      deliverystatus: 'cancelled'
     });
 
     // Get total revenue
     const revenueResult = await Order.aggregate([
-      { 
-        $match: { 
+      {
+        $match: {
           franchise: franchise._id,
           deliverystatus: 'delivered'
-        } 
+        }
       },
       {
         $group: {
@@ -457,6 +458,57 @@ export const getFranchiseStats = async (req, res) => {
     });
   } catch (error) {
     console.error('Get franchise stats error:', error);
+    return res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
+
+// Delete franchise (admin only)
+export const deleteFranchise = async (req, res) => {
+  try {
+    const { franchiseId } = req.params;
+
+    // Check if franchise exists
+    const franchise = await Franchise.findById(franchiseId);
+    if (!franchise) {
+      return res.status(404).json({ success: false, message: 'Franchise not found' });
+    }
+
+    // Check for related orders
+    const relatedOrders = await Order.countDocuments({ franchise: franchiseId });
+    if (relatedOrders > 0) {
+      return res.status(409).json({
+        success: false,
+        message: 'Cannot delete franchise with existing orders. Please reassign or delete the orders first.'
+      });
+    }
+
+    // Check for related stock items
+    const relatedStockItems = await FranchiseStock.countDocuments({ franchise: franchiseId });
+    if (relatedStockItems > 0) {
+      // Delete all related stock items
+      await FranchiseStock.deleteMany({ franchise: franchiseId });
+      console.log(`Deleted ${relatedStockItems} stock items for franchise ${franchiseId}`);
+    }
+
+    // If franchise has a manager, update the manager
+    if (franchise.orderManager) {
+      const manager = await User.findById(franchise.orderManager);
+      if (manager) {
+        manager.franchise = null;
+        await manager.save();
+        console.log(`Removed franchise association from manager ${manager._id}`);
+      }
+    }
+
+    // Delete the franchise
+    await Franchise.findByIdAndDelete(franchiseId);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Franchise deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete franchise error:', error);
     return res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 };

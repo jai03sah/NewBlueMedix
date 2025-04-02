@@ -18,6 +18,7 @@ import AdminDashboard from './pages/admin/Dashboard';
 import UserManagement from './pages/admin/UserManagement';
 import ManagerManagement from './pages/admin/ManagerManagement';
 import CreateManager from './pages/admin/CreateManager';
+import CategoryManagement from './pages/admin/CategoryManagement';
 import OrderManagement from './pages/admin/OrderManagement';
 import ProductManagement from './pages/admin/ProductManagement';
 import FranchiseManagement from './pages/admin/FranchiseManagement';
@@ -111,6 +112,7 @@ function App() {
         <Route path="/admin/managers/create" element={<AdminRoute><CreateManager /></AdminRoute>} />
         <Route path="/admin/orders" element={<AdminRoute><OrderManagement /></AdminRoute>} />
         <Route path="/admin/products" element={<AdminRoute><ProductManagement /></AdminRoute>} />
+        <Route path="/admin/categories" element={<AdminRoute><CategoryManagement /></AdminRoute>} />
         <Route path="/admin/franchises" element={<AdminRoute><FranchiseManagement /></AdminRoute>} />
         <Route path="/admin/franchise-stock" element={<AdminRoute><FranchiseStockManagement /></AdminRoute>} />
         <Route path="/admin/reports" element={<AdminRoute><Reports /></AdminRoute>} />

@@ -1,18 +1,18 @@
-# BlueMedix System Block Diagram
+# BlueMedix System Block Diagram 
 
 This document provides information about the BlueMedix System Block Diagram, which illustrates the high-level architecture and components of the system.
-
+ 
 ## Overview
 
 The block diagram provides a comprehensive visualization of the BlueMedix system architecture, including:
 
 - Client Layer components
 - API Gateway Layer
-- Business Logic Layer
+- Business Logic Layer 
 - Data Access Layer
 - Database Layer
 - Cross-cutting concerns
-- External integrations
+- External integrations 
 
 ## Accessing the Diagram
 
@@ -32,12 +32,12 @@ The diagram is organized into several layers, each representing a key architectu
    - User Interface components built with React
    - State Management using React Context
    - API Integration using Axios
-   - Styling with Tailwind CSS
+   - Styling with Tailwind CSS 
 
 2. **API Gateway Layer**
    - Authentication and authorization
    - Request handling and validation
-   - Response formatting
+   - Response formatting 
    - Error handling
 
 3. **Business Logic Layer**

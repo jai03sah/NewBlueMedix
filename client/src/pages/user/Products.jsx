@@ -47,7 +47,7 @@ const Products = () => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        
+
         // Build query parameters
         const params = new URLSearchParams();
         if (selectedCategory) params.append('category', selectedCategory);
@@ -58,14 +58,47 @@ const Products = () => {
         if (sortOrder) params.append('sortOrder', sortOrder);
         params.append('page', pagination.page);
         params.append('limit', pagination.limit);
-        
-        const response = await axios.get(
-          `${process.env.REACT_APP_API_URL}/api/products?${params.toString()}`
-        );
+
+        console.log('Fetching products with params:', params.toString());
+        console.log('Selected category:', selectedCategory);
+
+        // If we have a category ID, use the dedicated endpoint for category filtering
+        let response;
+        if (selectedCategory) {
+          response = await axios.get(
+            `${process.env.REACT_APP_API_URL}/api/products/category/${selectedCategory}`
+          );
+
+          // Adjust the response format to match the expected structure
+          if (response.data.success) {
+            response.data.pagination = {
+              total: response.data.products.length,
+              page: 1,
+              limit: response.data.products.length,
+              pages: 1
+            };
+          }
+        } else {
+          // Use the regular products endpoint with query parameters
+          response = await axios.get(
+            `${process.env.REACT_APP_API_URL}/api/products?${params.toString()}`
+          );
+        }
 
         if (response.data.success) {
           setProducts(response.data.products);
-          setPagination(response.data.pagination);
+
+          // Set pagination data if available
+          if (response.data.pagination) {
+            setPagination(response.data.pagination);
+          }
+
+          // If we're filtering by category, update the page title
+          if (selectedCategory && response.data.category) {
+            document.title = `${response.data.category} Products - BlueMedix`;
+          } else {
+            document.title = 'All Products - BlueMedix';
+          }
         } else {
           setError('Failed to fetch products');
           toast.error('Failed to fetch products');
@@ -209,7 +242,27 @@ const Products = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Products</h1>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+        <h1 className="text-2xl font-bold">
+          {selectedCategory && categories.find(c => c._id === selectedCategory)
+            ? `${categories.find(c => c._id === selectedCategory).name} Products`
+            : 'All Products'}
+        </h1>
+
+        {selectedCategory && (
+          <div className="mt-2 md:mt-0">
+            <Link to="/categories" className="text-blue-600 hover:underline mr-4">
+              <span className="inline-block mr-1">←</span> Back to All Categories
+            </Link>
+            <button
+              onClick={resetFilters}
+              className="text-blue-600 hover:underline"
+            >
+              Show All Products
+            </button>
+          </div>
+        )}
+      </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Filters Sidebar */}
@@ -239,7 +292,7 @@ const Products = () => {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={`w-full border ${selectedCategory ? 'border-blue-500 bg-blue-50' : 'border-gray-300'} rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500`}
               >
                 <option value="">All Categories</option>
                 {categories.map((category) => (
@@ -248,6 +301,11 @@ const Products = () => {
                   </option>
                 ))}
               </select>
+              {selectedCategory && (
+                <p className="text-xs text-blue-600 mt-1">
+                  Showing products in {categories.find(c => c._id === selectedCategory)?.name || 'selected category'}
+                </p>
+              )}
             </div>
             
             {/* Price Range */}

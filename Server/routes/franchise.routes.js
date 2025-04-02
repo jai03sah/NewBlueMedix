@@ -7,7 +7,8 @@ import {
   assignManagerToFranchise,
   getFranchiseOrders,
   getFranchiseStats,
-  getPublicFranchises
+  getPublicFranchises,
+  deleteFranchise
 } from '../controllers/franchise.controller.js';
 import { verifyToken, isAdmin, isAdminOrManager } from '../middleware/auth.middleware.js';
 
@@ -20,6 +21,7 @@ router.get('/public', getPublicFranchises);
 router.post('/', verifyToken, isAdmin, createFranchise);
 router.get('/', verifyToken, isAdmin, getAllFranchises);
 router.put('/:franchiseId', verifyToken, isAdmin, updateFranchise);
+router.delete('/:franchiseId', verifyToken, isAdmin, deleteFranchise);
 router.post('/assign-manager', verifyToken, isAdmin, assignManagerToFranchise);
 
 // Admin or manager routes

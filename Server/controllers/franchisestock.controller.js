@@ -2,7 +2,7 @@ import FranchiseStock from '../model/franchisestock.model.js';
 import Franchise from '../model/franchise.model.js';
 import Product from '../model/product.model.js';
 
-// Add or update product stock in a franchise
+// Add or update product stock in a franchise 
 export const updateFranchiseStock = async (req, res) => {
   try {
     const { franchiseId, productId } = req.params;
@@ -32,7 +32,7 @@ export const updateFranchiseStock = async (req, res) => {
     });
 
     if (franchiseStock) {
-      // Update existing stock
+      // Update existing stock 
       try {
         await franchiseStock.updateStock(quantity, isAddition);
       } catch (error) {

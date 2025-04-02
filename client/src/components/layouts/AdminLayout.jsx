@@ -53,6 +53,12 @@ const AdminLayout = ({ children }) => {
             Product Management
           </Link>
           <Link
+            to="/admin/categories"
+            className={`block py-2.5 px-4 rounded transition duration-200 ${isActive('/admin/categories')}`}
+          >
+            Category Management
+          </Link>
+          <Link
             to="/admin/franchise-stock"
             className={`block py-2.5 px-4 rounded transition duration-200 ${isActive('/admin/franchise-stock')}`}
           >

@@ -5,7 +5,7 @@ const franchiseStockSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'franchise',
     required: true
-  },
+  }, 
   product: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'product',

@@ -378,10 +378,10 @@ const FranchiseManagement = () => {
     if (!window.confirm('Are you sure you want to delete this franchise?')) {
       return;
     }
-    
+
     try {
       const token = localStorage.getItem('token');
-      
+
       const response = await axios.delete(
         `${process.env.REACT_APP_API_URL}/api/franchises/${franchiseId}`,
         {
@@ -393,7 +393,9 @@ const FranchiseManagement = () => {
 
       if (response.data.success) {
         toast.success('Franchise deleted successfully');
-        fetchFranchises();
+        // Remove the franchise from the local state to update UI immediately
+        setFranchises(prevFranchises => prevFranchises.filter(franchise => franchise._id !== franchiseId));
+        // No need to fetch franchises again as we've already updated the UI
       } else {
         toast.error('Failed to delete franchise');
       }
@@ -414,7 +416,11 @@ const FranchiseManagement = () => {
         } else if (statusCode === 403) {
           errorMessage = 'You do not have permission to delete franchises.';
         } else if (statusCode === 404) {
-          errorMessage = 'Franchise not found. It may have already been deleted.';
+          // If franchise not found, it might have been deleted already
+          // Remove it from the local state and show a success message
+          setFranchises(prevFranchises => prevFranchises.filter(franchise => franchise._id !== franchiseId));
+          toast.success('Franchise has been removed');
+          return; // Exit early to prevent error message
         } else if (statusCode === 409) {
           errorMessage = `Cannot delete: ${serverMessage || 'Franchise has associated data'}`;
         } else if (statusCode === 500) {

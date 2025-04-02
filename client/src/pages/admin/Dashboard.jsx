@@ -105,17 +105,23 @@ const AdminDashboard = () => {
             >
               Create New User
             </Link>
-            <Link 
-              to="/admin/managers/create" 
+            <Link
+              to="/admin/managers/create"
               className="block w-full py-2 px-4 bg-green-600 text-white rounded hover:bg-green-700 text-center"
             >
               Create New Manager
             </Link>
-            <Link 
-              to="/admin/franchises/create" 
+            <Link
+              to="/admin/franchises/create"
               className="block w-full py-2 px-4 bg-purple-600 text-white rounded hover:bg-purple-700 text-center"
             >
               Create New Franchise
+            </Link>
+            <Link
+              to="/admin/categories"
+              className="block w-full py-2 px-4 bg-yellow-600 text-white rounded hover:bg-yellow-700 text-center"
+            >
+              Manage Categories
             </Link>
           </div>
         </div>

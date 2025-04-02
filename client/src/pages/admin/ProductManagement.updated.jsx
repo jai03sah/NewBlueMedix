@@ -160,7 +160,7 @@ const ProductManagement = () => {
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
     setImageFiles(files);
-
+    
     // Create preview URLs
     const previews = files.map(file => URL.createObjectURL(file));
     setImagePreview(previews);
@@ -169,10 +169,10 @@ const ProductManagement = () => {
   // Handle image URL input
   const handleImageUrlAdd = () => {
     if (!formData.imageUrl) return;
-
+    
     // Add the URL to the preview
     setImagePreview([...imagePreview, formData.imageUrl]);
-
+    
     // Add the URL to the form data image array
     setFormData({
       ...formData,
@@ -186,14 +186,14 @@ const ProductManagement = () => {
     const newPreview = [...imagePreview];
     newPreview.splice(index, 1);
     setImagePreview(newPreview);
-
+    
     // If it's a file upload, also remove from imageFiles
     if (imageFiles.length > 0 && index < imageFiles.length) {
       const newFiles = [...imageFiles];
       newFiles.splice(index, 1);
       setImageFiles(newFiles);
     }
-
+    
     // If it's a URL, remove from formData.image
     if (formData.image.length > 0) {
       const newImages = [...formData.image];
@@ -204,21 +204,6 @@ const ProductManagement = () => {
       });
     }
   };
-
-  // Handle image URL input
-  // const handleImageUrlAdd = () => {
-  //   if (!formData.imageUrl) return;
-
-  //   // Add the URL to the preview
-  //   setImagePreview([...imagePreview, formData.imageUrl]);
-
-  //   // Add the URL to the form data image array
-  //   setFormData({
-  //     ...formData,
-  //     image: [...formData.image, formData.imageUrl],
-  //     imageUrl: '' // Clear the input field
-  //   });
-  // };
 
   const handleAddProduct = async (e) => {
     e.preventDefault();
@@ -256,13 +241,9 @@ const ProductManagement = () => {
         category: categoryId, // Use the trimmed ID
         warehouseStock: formData.warehouseStock,
         lowStockThreshold: formData.lowStockThreshold,
-        manufacturer: formData.manufacturer
+        manufacturer: formData.manufacturer,
+        image: formData.image // Include image URLs
       };
-
-      // Include image URLs in the product data
-      if (formData.image && formData.image.length > 0) {
-        productData.image = formData.image;
-      }
 
       // If there are no image files, use regular JSON
       if (imageFiles.length === 0) {
@@ -294,6 +275,7 @@ const ProductManagement = () => {
             image: [],
             imageUrl: ''
           });
+          setImagePreview([]);
           fetchProducts();
         } else {
           toast.error('Failed to add product');
@@ -311,6 +293,11 @@ const ProductManagement = () => {
       formDataObj.append('warehouseStock', formData.warehouseStock);
       formDataObj.append('lowStockThreshold', formData.lowStockThreshold);
       formDataObj.append('manufacturer', formData.manufacturer);
+
+      // Append image URLs if any
+      if (formData.image.length > 0) {
+        formDataObj.append('image', JSON.stringify(formData.image));
+      }
 
       // Append each image file
       imageFiles.forEach(file => {
@@ -340,7 +327,8 @@ const ProductManagement = () => {
           warehouseStock: '0',
           lowStockThreshold: '10',
           manufacturer: '',
-          image: []
+          image: [],
+          imageUrl: ''
         });
         setImageFiles([]);
         setImagePreview([]);
@@ -399,13 +387,9 @@ const ProductManagement = () => {
         category: categoryId, // Use the trimmed ID
         warehouseStock: formData.warehouseStock,
         lowStockThreshold: formData.lowStockThreshold,
-        manufacturer: formData.manufacturer
+        manufacturer: formData.manufacturer,
+        image: formData.image // Include image URLs
       };
-
-      // Include image URLs in the product data
-      if (formData.image && formData.image.length > 0) {
-        productData.image = formData.image;
-      }
 
       // If there are no new image files, use regular JSON
       if (imageFiles.length === 0) {
@@ -440,10 +424,15 @@ const ProductManagement = () => {
       formDataObj.append('description', formData.description);
       formDataObj.append('price', formData.price);
       formDataObj.append('discount', formData.discount);
-      formDataObj.append('category', formData.category.trim()); // Trim any whitespace
+      formDataObj.append('category', categoryId); // Use the validated categoryId
       formDataObj.append('warehouseStock', formData.warehouseStock);
       formDataObj.append('lowStockThreshold', formData.lowStockThreshold);
       formDataObj.append('manufacturer', formData.manufacturer);
+
+      // Append image URLs if any
+      if (formData.image.length > 0) {
+        formDataObj.append('image', JSON.stringify(formData.image));
+      }
 
       // Append each image file if there are new images
       if (imageFiles.length > 0) {
@@ -576,7 +565,7 @@ const ProductManagement = () => {
               </button>
             </form>
           </div>
-
+          
           {/* Category Filter */}
           <div>
             <select
@@ -595,8 +584,8 @@ const ProductManagement = () => {
               ))}
             </select>
           </div>
-
-          {/* Sort By */}
+          
+          {/* Sort */}
           <div>
             <select
               value={`${sortBy}-${sortOrder}`}
@@ -614,54 +603,38 @@ const ProductManagement = () => {
               <option value="price-desc">Price: High to Low</option>
               <option value="name-asc">Name: A to Z</option>
               <option value="name-desc">Name: Z to A</option>
-              <option value="warehouseStock-asc">Stock: Low to High</option>
-              <option value="warehouseStock-desc">Stock: High to Low</option>
             </select>
           </div>
         </div>
       </div>
 
       {/* Products Table */}
-      {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-        </div>
-      ) : error ? (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          <p>{error}</p>
-          <button 
-            onClick={() => fetchProducts()} 
-            className="mt-2 bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded"
-          >
-            Try Again
-          </button>
-        </div>
-      ) : products.length === 0 ? (
-        <div className="bg-white shadow-md rounded-lg p-8 text-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-          </svg>
-          <h2 className="text-xl font-semibold mt-4">No products found</h2>
-          <p className="text-gray-600 mt-2">
-            {searchQuery || selectedCategory
-              ? "No products match your search criteria."
-              : "There are no products in the system yet."}
-          </p>
-          {(searchQuery || selectedCategory) && (
-            <button
-              onClick={() => {
-                setSearchQuery('');
-                setSelectedCategory('');
-                fetchProducts();
-              }}
-              className="mt-4 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded"
+      <div className="bg-white shadow-md rounded-lg overflow-hidden">
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
+        ) : error ? (
+          <div className="p-4 text-center text-red-500">
+            <p>{error}</p>
+            <button 
+              onClick={() => fetchProducts()} 
+              className="mt-2 bg-blue-600 hover:bg-blue-700 text-white py-1 px-3 rounded"
             >
-              Clear Filters
+              Try Again
             </button>
-          )}
-        </div>
-      ) : (
-        <div className="bg-white shadow-md rounded-lg overflow-hidden">
+          </div>
+        ) : products.length === 0 ? (
+          <div className="p-4 text-center text-gray-500">
+            <p>No products found.</p>
+            <button 
+              onClick={() => setShowAddModal(true)} 
+              className="mt-2 bg-blue-600 hover:bg-blue-700 text-white py-1 px-3 rounded"
+            >
+              Add Product
+            </button>
+          </div>
+        ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -679,9 +652,6 @@ const ProductManagement = () => {
                     Stock
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Created
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -691,36 +661,42 @@ const ProductManagement = () => {
                   <tr key={product._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 bg-gray-100 rounded overflow-hidden">
+                        <div className="h-10 w-10 flex-shrink-0 mr-3">
                           {product.image && product.image.length > 0 ? (
                             <img 
                               src={product.image[0]} 
                               alt={product.name}
-                              className="h-full w-full object-cover"
+                              className="h-10 w-10 rounded-full object-cover"
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = "https://via.placeholder.com/40?text=No+Image";
+                              }}
                             />
                           ) : (
-                            <div className="flex items-center justify-center h-full">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                               </svg>
                             </div>
                           )}
                         </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                          {product.manufacturer && (
-                            <div className="text-sm text-gray-500">{product.manufacturer}</div>
-                          )}
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {product.name}
+                          </div>
+                          <div className="text-sm text-gray-500 truncate max-w-xs">
+                            {product.description}
+                          </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500">
-                        {product.category ? product.category.name : 'Uncategorized'}
-                      </div>
+                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                        {product.category?.name || 'Uncategorized'}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">${product.price.toFixed(2)}</div>
+                      <div className="text-sm text-gray-900">${product.price.toFixed(2)}</div>
                       {product.discount > 0 && (
                         <div className="text-xs text-green-600">
                           {product.discount}% off
@@ -728,167 +704,164 @@ const ProductManagement = () => {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className={`text-sm font-medium ${
-                        product.warehouseStock <= (product.lowStockThreshold || 10)
-                          ? 'text-red-600'
-                          : 'text-gray-900'
-                      }`}>
-                        {product.warehouseStock} units
+                      <div className={`text-sm ${product.warehouseStock <= product.lowStockThreshold ? 'text-red-600 font-medium' : 'text-gray-900'}`}>
+                        {product.warehouseStock} in stock
                       </div>
-                      {product.warehouseStock <= (product.lowStockThreshold || 10) && (
-                        <div className="text-xs text-red-600">
+                      {product.warehouseStock <= product.lowStockThreshold && (
+                        <div className="text-xs text-red-500">
                           Low stock
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(product.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex justify-end space-x-2">
-                        <Link 
-                          to={`/admin/products/${product._id}`} 
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          View
-                        </Link>
-                        <button
-                          onClick={() => openEditModal(product)}
-                          className="text-indigo-600 hover:text-indigo-900"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteProduct(product._id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Delete
-                        </button>
-                      </div>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button
+                        onClick={() => openEditModal(product)}
+                        className="text-indigo-600 hover:text-indigo-900 mr-3"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteProduct(product._id)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        Delete
+                      </button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
-              <div className="flex-1 flex justify-between sm:hidden">
-                <button
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
-                    currentPage === 1
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-white text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  Previous
-                </button>
-                <button
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
-                    currentPage === totalPages
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-white text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  Next
-                </button>
+        )}
+        
+        {/* Pagination */}
+        {!loading && products.length > 0 && (
+          <div className="px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+            <div className="flex-1 flex justify-between sm:hidden">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+                  currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className={`ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+                  currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Next
+              </button>
+            </div>
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  Showing page <span className="font-medium">{currentPage}</span> of <span className="font-medium">{totalPages}</span>
+                </p>
               </div>
-              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm text-gray-700">
-                    Showing page <span className="font-medium">{currentPage}</span> of{' '}
-                    <span className="font-medium">{totalPages}</span>
-                  </p>
-                </div>
-                <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                    <button
-                      onClick={() => setCurrentPage(1)}
-                      disabled={currentPage === 1}
-                      className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
-                        currentPage === 1
-                          ? 'text-gray-300 cursor-not-allowed'
-                          : 'text-gray-500 hover:bg-gray-50'
-                      }`}
-                    >
-                      <span className="sr-only">First</span>
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
-                        <path fillRule="evenodd" d="M7.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L3.414 10l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                      disabled={currentPage === 1}
-                      className={`relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium ${
-                        currentPage === 1
-                          ? 'text-gray-300 cursor-not-allowed'
-                          : 'text-gray-500 hover:bg-gray-50'
-                      }`}
-                    >
-                      <span className="sr-only">Previous</span>
-                      <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    </button>
+              <div>
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  <button
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
+                      currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className="sr-only">First</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414zm-6 0a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 1.414L5.414 10l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className={`relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium ${
+                      currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className="sr-only">Previous</span>
+                    <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                  
+                  {/* Page numbers */}
+                  {[...Array(totalPages).keys()].map(number => {
+                    const pageNumber = number + 1;
+                    // Show current page, first, last, and pages around current
+                    if (
+                      pageNumber === 1 ||
+                      pageNumber === totalPages ||
+                      (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
+                    ) {
+                      return (
+                        <button
+                          key={pageNumber}
+                          onClick={() => setCurrentPage(pageNumber)}
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                            currentPage === pageNumber
+                              ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                          }`}
+                        >
+                          {pageNumber}
+                        </button>
+                      );
+                    }
                     
-                    {/* Page numbers */}
-                    {[...Array(totalPages)].map((_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setCurrentPage(i + 1)}
-                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                          currentPage === i + 1
-                            ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                        }`}
-                      >
-                        {i + 1}
-                      </button>
-                    ))}
+                    // Show ellipsis for gaps
+                    if (
+                      (pageNumber === 2 && currentPage > 3) ||
+                      (pageNumber === totalPages - 1 && currentPage < totalPages - 2)
+                    ) {
+                      return (
+                        <span
+                          key={pageNumber}
+                          className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"
+                        >
+                          ...
+                        </span>
+                      );
+                    }
                     
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                      disabled={currentPage === totalPages}
-                      className={`relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium ${
-                        currentPage === totalPages
-                          ? 'text-gray-300 cursor-not-allowed'
-                          : 'text-gray-500 hover:bg-gray-50'
-                      }`}
-                    >
-                      <span className="sr-only">Next</span>
-                      <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => setCurrentPage(totalPages)}
-                      disabled={currentPage === totalPages}
-                      className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
-                        currentPage === totalPages
-                          ? 'text-gray-300 cursor-not-allowed'
-                          : 'text-gray-500 hover:bg-gray-50'
-                      }`}
-                    >
-                      <span className="sr-only">Last</span>
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M4.293 15.707a1 1 0 001.414 0l5-5a1 1 0 000-1.414l-5-5a1 1 0 00-1.414 1.414L8.586 10 4.293 14.293a1 1 0 000 1.414z" clipRule="evenodd" />
-                        <path fillRule="evenodd" d="M12.293 15.707a1 1 0 001.414 0l5-5a1 1 0 000-1.414l-5-5a1 1 0 00-1.414 1.414L16.586 10l-4.293 4.293a1 1 0 000 1.414z" clipRule="evenodd" />
-                      </svg>
-                    </button>
-                  </nav>
-                </div>
+                    return null;
+                  })}
+                  
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className={`relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium ${
+                      currentPage === totalPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className="sr-only">Next</span>
+                    <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
+                      currentPage === totalPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className="sr-only">Last</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M4.293 15.707a1 1 0 001.414 0l5-5a1 1 0 000-1.414l-5-5a1 1 0 00-1.414 1.414L8.586 10 4.293 14.293a1 1 0 000 1.414zm6 0a1 1 0 001.414 0l5-5a1 1 0 000-1.414l-5-5a1 1 0 00-1.414 1.414L14.586 10l-4.293 4.293a1 1 0 000 1.414z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </nav>
               </div>
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
       {/* Add Product Modal */}
       {showAddModal && (
@@ -1052,7 +1025,7 @@ const ProductManagement = () => {
                     <label className="block text-gray-700 text-sm font-bold mb-2">
                       Product Images
                     </label>
-
+                    
                     {/* Image URL Input */}
                     <div className="mb-2">
                       <label className="block text-gray-700 text-xs mb-1">
@@ -1079,7 +1052,7 @@ const ProductManagement = () => {
                         Enter a valid image URL and click Add
                       </p>
                     </div>
-
+                    
                     {/* File Upload (Optional) */}
                     <div className="mt-3">
                       <label className="block text-gray-700 text-xs mb-1">
@@ -1104,12 +1077,25 @@ const ProductManagement = () => {
                       </label>
                       <div className="grid grid-cols-3 gap-2">
                         {imagePreview.map((src, index) => (
-                          <div key={index} className="h-24 bg-gray-100 rounded overflow-hidden">
+                          <div key={index} className="relative h-24 bg-gray-100 rounded overflow-hidden">
                             <img 
                               src={src} 
                               alt={`Preview ${index + 1}`}
                               className="h-full w-full object-cover"
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = "https://via.placeholder.com/100?text=Invalid+URL";
+                              }}
                             />
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveImage(index)}
+                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
                           </div>
                         ))}
                       </div>
@@ -1385,33 +1371,80 @@ const ProductManagement = () => {
                     />
                   </div>
                   <div className="mb-4">
-                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="edit-images">
-                      Product Images (Leave empty to keep current images)
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                      Product Images
                     </label>
-                    <input
-                      type="file"
-                      id="edit-images"
-                      name="images"
-                      onChange={handleImageChange}
-                      multiple
-                      accept="image/*"
-                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    
+                    {/* Image URL Input */}
+                    <div className="mb-2">
+                      <label className="block text-gray-700 text-xs mb-1">
+                        Add Image URL
+                      </label>
+                      <div className="flex">
+                        <input
+                          type="text"
+                          name="imageUrl"
+                          value={formData.imageUrl || ''}
+                          onChange={handleInputChange}
+                          placeholder="Enter image URL"
+                          className="flex-1 border border-gray-300 rounded-l px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleImageUrlAdd}
+                          className="bg-blue-500 text-white px-3 py-2 rounded-r hover:bg-blue-600"
+                        >
+                          Add
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Enter a valid image URL and click Add
+                      </p>
+                    </div>
+                    
+                    {/* File Upload (Optional) */}
+                    <div className="mt-3">
+                      <label className="block text-gray-700 text-xs mb-1">
+                        Or Upload New Images (Optional)
+                      </label>
+                      <input
+                        type="file"
+                        id="edit-images"
+                        name="images"
+                        onChange={handleImageChange}
+                        multiple
+                        accept="image/*"
+                        className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
                   </div>
                   {/* Image Preview */}
                   {imagePreview.length > 0 && (
                     <div className="mb-4">
                       <label className="block text-gray-700 text-sm font-bold mb-2">
-                        {imageFiles.length > 0 ? 'New Images Preview' : 'Current Images'}
+                        Image Preview
                       </label>
                       <div className="grid grid-cols-3 gap-2">
                         {imagePreview.map((src, index) => (
-                          <div key={index} className="h-24 bg-gray-100 rounded overflow-hidden">
+                          <div key={index} className="relative h-24 bg-gray-100 rounded overflow-hidden">
                             <img 
                               src={src} 
                               alt={`Preview ${index + 1}`}
                               className="h-full w-full object-cover"
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = "https://via.placeholder.com/100?text=Invalid+URL";
+                              }}
                             />
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveImage(index)}
+                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
                           </div>
                         ))}
                       </div>
