@@ -250,3 +250,37 @@ export const changePassword = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 };
+
+// Delete user (admin only)
+export const deleteUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Check if user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // If user is a manager, check if they're assigned to a franchise
+    if (user.role === 'orderManager' && user.franchise) {
+      // Update the franchise to remove the manager reference
+      await Franchise.findByIdAndUpdate(
+        user.franchise,
+        { $unset: { orderManager: 1 } },
+        { new: true }
+      );
+    }
+
+    // Delete the user
+    await User.findByIdAndDelete(userId);
+
+    return res.status(200).json({
+      success: true,
+      message: 'User deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    return res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};

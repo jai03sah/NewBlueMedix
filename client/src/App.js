@@ -24,10 +24,12 @@ import ProductManagement from './pages/admin/ProductManagement';
 import FranchiseManagement from './pages/admin/FranchiseManagement';
 import FranchiseStockManagement from './pages/admin/FranchiseStockManagement';
 import Reports from './pages/admin/Reports';
+import AdminProfile from './pages/admin/AdminProfile';
 import AdminLogout from './pages/admin/Logout';
 
 // Manager Pages
 import ManagerDashboard from './pages/manager/Dashboard';
+import ManagerProfile from './pages/manager/ManagerProfile';
 import ManagerOrders from './pages/manager/Orders';
 import ManagerCustomers from './pages/manager/Customers';
 import CustomerDetails from './pages/manager/CustomerDetails';
@@ -37,6 +39,7 @@ import ManagerLogout from './pages/manager/Logout';
 
 // User Pages
 import UserDashboard from './pages/user/Dashboard';
+import UserProfile from './pages/user/UserProfile';
 import Products from './pages/user/Products';
 import ProductDetail from './pages/user/ProductDetail';
 import Categories from './pages/user/Categories';
@@ -116,10 +119,12 @@ function App() {
         <Route path="/admin/franchises" element={<AdminRoute><FranchiseManagement /></AdminRoute>} />
         <Route path="/admin/franchise-stock" element={<AdminRoute><FranchiseStockManagement /></AdminRoute>} />
         <Route path="/admin/reports" element={<AdminRoute><Reports /></AdminRoute>} />
+        <Route path="/admin/profile" element={<AdminRoute><AdminProfile /></AdminRoute>} />
         <Route path="/admin/logout" element={<AdminLogout />} />
 
         {/* Manager Routes */}
         <Route path="/manager/dashboard" element={<ManagerRoute><ManagerDashboard /></ManagerRoute>} />
+        <Route path="/manager/profile" element={<ManagerRoute><ManagerProfile /></ManagerRoute>} />
         <Route path="/manager/orders" element={<ManagerRoute><ManagerOrders /></ManagerRoute>} />
         <Route path="/manager/customers" element={<ManagerRoute><ManagerCustomers /></ManagerRoute>} />
         <Route path="/manager/customers/:customerId" element={<ManagerRoute><CustomerDetails /></ManagerRoute>} />
@@ -134,6 +139,7 @@ function App() {
 
         {/* Protected User Routes */}
         <Route path="/user/dashboard" element={<UserRoute><UserDashboard /></UserRoute>} />
+        <Route path="/user/profile" element={<UserRoute><UserProfile /></UserRoute>} />
         <Route path="/cart" element={<UserRoute><Cart /></UserRoute>} />
         <Route path="/orders" element={<UserRoute><Orders /></UserRoute>} />
         <Route path="/addresses" element={<Addresses />} />

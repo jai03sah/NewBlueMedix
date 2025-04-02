@@ -80,7 +80,9 @@ const ManagerDashboard = () => {
       <div className="bg-white rounded-lg shadow-md p-6 mb-8">
         <h1 className="text-2xl font-bold mb-2">Welcome to {franchiseData.name}</h1>
         <p className="text-gray-600">
-          {franchiseData.address.street}, {franchiseData.address.city}, {franchiseData.address.state}, {franchiseData.address.pincode}
+          {franchiseData.address && typeof franchiseData.address === 'object'
+            ? `${franchiseData.address.Street || ''}, ${franchiseData.address.city || ''}, ${franchiseData.address.state || ''}, ${franchiseData.address.pincode || ''}`
+            : franchiseData.address || 'No address available'}
         </p>
       </div>
       
@@ -124,23 +126,29 @@ const ManagerDashboard = () => {
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
           <div className="space-y-4">
-            <Link 
-              to="/manager/orders/create" 
+            <Link
+              to="/manager/orders/create"
               className="block w-full py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 text-center"
             >
               Create New Order
             </Link>
-            <Link 
-              to="/manager/inventory/update" 
+            <Link
+              to="/manager/inventory/update"
               className="block w-full py-2 px-4 bg-green-600 text-white rounded hover:bg-green-700 text-center"
             >
               Update Inventory
             </Link>
-            <Link 
-              to="/manager/reports" 
+            <Link
+              to="/manager/reports"
               className="block w-full py-2 px-4 bg-purple-600 text-white rounded hover:bg-purple-700 text-center"
             >
               Generate Reports
+            </Link>
+            <Link
+              to="/manager/profile"
+              className="block w-full py-2 px-4 bg-gray-600 text-white rounded hover:bg-gray-700 text-center"
+            >
+              Manage Profile
             </Link>
           </div>
         </div>

@@ -277,10 +277,10 @@ const ManagerManagement = () => {
     if (!window.confirm('Are you sure you want to delete this manager?')) {
       return;
     }
-    
+
     try {
       const token = localStorage.getItem('token');
-      
+
       const response = await axios.delete(
         `${process.env.REACT_APP_API_URL}/api/users/${managerId}`,
         {
@@ -292,13 +292,45 @@ const ManagerManagement = () => {
 
       if (response.data.success) {
         toast.success('Manager deleted successfully');
-        fetchManagers();
+        // Remove the manager from the local state to update UI immediately
+        setManagers(prevManagers => prevManagers.filter(manager => manager._id !== managerId));
       } else {
         toast.error('Failed to delete manager');
       }
     } catch (error) {
       console.error('Delete manager error:', error);
-      toast.error(error.response?.data?.message || 'Failed to delete manager');
+
+      // Detailed error handling
+      let errorMessage = 'Failed to delete manager';
+
+      if (error.response) {
+        const statusCode = error.response.status;
+        const serverMessage = error.response.data?.message || '';
+
+        if (statusCode === 401) {
+          errorMessage = 'Authentication failed. Please log in again.';
+        } else if (statusCode === 403) {
+          errorMessage = 'You do not have permission to delete managers.';
+        } else if (statusCode === 404) {
+          // If manager not found, it might have been deleted already
+          // Remove it from the local state and show a success message
+          setManagers(prevManagers => prevManagers.filter(manager => manager._id !== managerId));
+          toast.success('Manager has been removed');
+          return; // Exit early to prevent error message
+        } else if (statusCode === 500) {
+          errorMessage = `Server error: ${serverMessage || 'Internal server error'}`;
+        } else {
+          errorMessage = `Error (${statusCode}): ${serverMessage || errorMessage}`;
+        }
+      } else if (error.request) {
+        // The request was made but no response was received
+        errorMessage = 'No response from server. Please check your network connection.';
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        errorMessage = `Request error: ${error.message}`;
+      }
+
+      toast.error(errorMessage);
     }
   };
 

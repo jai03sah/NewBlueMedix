@@ -6,7 +6,8 @@ import {
   changeUserStatus,
   createManager,
   getAllManagers,
-  changePassword
+  changePassword,
+  deleteUser
 } from '../controllers/user.controller.js';
 import { verifyToken, isAdmin, isAdminOrManager } from '../middleware/auth.middleware.js';
 
@@ -17,6 +18,7 @@ router.get('/', verifyToken, isAdmin, getAllUsers);
 router.post('/manager', verifyToken, isAdmin, createManager);
 router.get('/managers', verifyToken, isAdmin, getAllManagers);
 router.patch('/:userId/status', verifyToken, isAdmin, changeUserStatus);
+router.delete('/:userId', verifyToken, isAdmin, deleteUser);
 
 // Admin or manager routes
 router.get('/:userId', verifyToken, isAdminOrManager, getUserById);

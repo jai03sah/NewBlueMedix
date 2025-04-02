@@ -51,7 +51,7 @@ const Home = () => {
             <div>
               <h1 className="text-4xl md:text-5xl font-bold mb-4">
                 Your Trusted Medical Supply Partner
-              </h1>
+              </h1> 
               <p className="text-xl mb-8">
                 Quality healthcare products delivered to your doorstep. Browse our extensive catalog of medical supplies and equipment.
               </p>
@@ -70,12 +70,12 @@ const Home = () => {
                 </Link>
               </div>
             </div>
-            <div className="hidden md:block">
-              <img
-                src="https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+            <div className="hidden md:block"> 
+              <img 
+                src="https://img.freepik.com/free-vector/flat-design-medical-services-twitter-header_23-2149190590.jpg?t=st=1743588341~exp=1743591941~hmac=dfe9d21bcd5c60a7ef8a5a366b782d31adcb5a3f6690e1aeca7b9b4caa3b53ab&w=1380"
                 alt="Medical Supplies"
                 className="rounded-lg shadow-lg"
-              />
+              /> 
             </div>
           </div>
         </div>
