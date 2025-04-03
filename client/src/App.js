@@ -16,12 +16,15 @@ import CreateAdmin from './pages/CreateAdmin';
 // Admin Pages
 import AdminDashboard from './pages/admin/Dashboard';
 import UserManagement from './pages/admin/UserManagement';
+import UserDetail from './pages/admin/UserDetail';
 import ManagerManagement from './pages/admin/ManagerManagement';
+import ManagerDetail from './pages/admin/ManagerDetail';
 import CreateManager from './pages/admin/CreateManager';
 import CategoryManagement from './pages/admin/CategoryManagement';
 import OrderManagement from './pages/admin/OrderManagement';
 import ProductManagement from './pages/admin/ProductManagement';
 import FranchiseManagement from './pages/admin/FranchiseManagement';
+import FranchiseDetail from './pages/admin/FranchiseDetail';
 import FranchiseStockManagement from './pages/admin/FranchiseStockManagement';
 import Reports from './pages/admin/Reports';
 import AdminProfile from './pages/admin/AdminProfile';
@@ -31,6 +34,7 @@ import AdminLogout from './pages/admin/Logout';
 import ManagerDashboard from './pages/manager/Dashboard';
 import ManagerProfile from './pages/manager/ManagerProfile';
 import ManagerOrders from './pages/manager/Orders';
+import ManagerOrderDetail from './pages/manager/OrderDetail';
 import ManagerCustomers from './pages/manager/Customers';
 import CustomerDetails from './pages/manager/CustomerDetails';
 import ManagerInventory from './pages/manager/Inventory';
@@ -45,6 +49,7 @@ import ProductDetail from './pages/user/ProductDetail';
 import Categories from './pages/user/Categories';
 import Cart from './pages/user/Cart';
 import Orders from './pages/user/Orders';
+import OrderDetail from './pages/user/OrderDetail';
 import Addresses from './pages/user/Addresses';
 import AddAddress from './pages/user/AddAddress';
 import EditAddress from './pages/user/EditAddress';
@@ -111,12 +116,16 @@ function App() {
         {/* Admin Routes */}
         <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
         <Route path="/admin/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
+        <Route path="/admin/users/:userId" element={<AdminRoute><UserDetail /></AdminRoute>} />
         <Route path="/admin/managers" element={<AdminRoute><ManagerManagement /></AdminRoute>} />
+        <Route path="/admin/managers/:managerId" element={<AdminRoute><ManagerDetail /></AdminRoute>} />
         <Route path="/admin/managers/create" element={<AdminRoute><CreateManager /></AdminRoute>} />
         <Route path="/admin/orders" element={<AdminRoute><OrderManagement /></AdminRoute>} />
+        <Route path="/admin/orders/:orderId" element={<AdminRoute><OrderDetail /></AdminRoute>} />
         <Route path="/admin/products" element={<AdminRoute><ProductManagement /></AdminRoute>} />
         <Route path="/admin/categories" element={<AdminRoute><CategoryManagement /></AdminRoute>} />
         <Route path="/admin/franchises" element={<AdminRoute><FranchiseManagement /></AdminRoute>} />
+        <Route path="/admin/franchises/:franchiseId" element={<AdminRoute><FranchiseDetail /></AdminRoute>} />
         <Route path="/admin/franchise-stock" element={<AdminRoute><FranchiseStockManagement /></AdminRoute>} />
         <Route path="/admin/reports" element={<AdminRoute><Reports /></AdminRoute>} />
         <Route path="/admin/profile" element={<AdminRoute><AdminProfile /></AdminRoute>} />
@@ -126,6 +135,7 @@ function App() {
         <Route path="/manager/dashboard" element={<ManagerRoute><ManagerDashboard /></ManagerRoute>} />
         <Route path="/manager/profile" element={<ManagerRoute><ManagerProfile /></ManagerRoute>} />
         <Route path="/manager/orders" element={<ManagerRoute><ManagerOrders /></ManagerRoute>} />
+        <Route path="/manager/orders/:orderId" element={<ManagerRoute><ManagerOrderDetail /></ManagerRoute>} />
         <Route path="/manager/customers" element={<ManagerRoute><ManagerCustomers /></ManagerRoute>} />
         <Route path="/manager/customers/:customerId" element={<ManagerRoute><CustomerDetails /></ManagerRoute>} />
         <Route path="/manager/inventory" element={<ManagerRoute><ManagerInventory /></ManagerRoute>} />
@@ -142,6 +152,7 @@ function App() {
         <Route path="/user/profile" element={<UserRoute><UserProfile /></UserRoute>} />
         <Route path="/cart" element={<UserRoute><Cart /></UserRoute>} />
         <Route path="/orders" element={<UserRoute><Orders /></UserRoute>} />
+        <Route path="/orders/:orderId" element={<UserRoute><OrderDetail /></UserRoute>} />
         <Route path="/addresses" element={<Addresses />} />
         <Route path="/addresses/add" element={<AddAddress />} />
         <Route path="/addresses/edit/:addressId" element={<EditAddress />} />

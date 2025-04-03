@@ -18,9 +18,12 @@ router.get('/my-orders', verifyToken, getUserOrders);
 
 // Admin or manager routes
 router.get('/', verifyToken, isAdminOrManager, getAllOrders);
-router.get('/:orderId', verifyToken, isAdminOrManager, getOrderById);
 router.patch('/:orderId/status', verifyToken, isAdminOrManager, updateOrderStatus);
 router.post('/:orderId/invoice', verifyToken, isAdminOrManager, generateInvoice);
+
+// Order details route - accessible to all authenticated users
+// The controller will handle permission checks to ensure users can only see their own orders
+router.get('/:orderId', verifyToken, getOrderById);
 
 // Admin only routes
 router.patch('/:orderId/payment', verifyToken, isAdmin, updatePaymentStatus);

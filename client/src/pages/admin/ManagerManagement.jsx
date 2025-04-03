@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { debounce } from 'lodash';
 
 const ManagerManagement = () => {
   const [managers, setManagers] = useState([]);
@@ -25,12 +26,25 @@ const ManagerManagement = () => {
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState('desc');
 
+  // Debounce search query updates
+  const debouncedSetSearch = useCallback(
+    debounce((query) => {
+      console.log('Debounced search query:', query);
+      fetchManagers(query);
+    }, 500),
+    []
+  );
+
   useEffect(() => {
-    fetchManagers();
+    if (searchQuery.trim() !== '') {
+      debouncedSetSearch(searchQuery);
+    } else {
+      fetchManagers();
+    }
     fetchFranchises();
   }, [currentPage, sortBy, sortOrder]);
 
-  const fetchManagers = async () => {
+  const fetchManagers = async (searchTerm = null) => {
     try {
       setLoading(true);
       setError(null); // Reset error state before new fetch
@@ -46,8 +60,12 @@ const ManagerManagement = () => {
       // Build query parameters
       let url = `${process.env.REACT_APP_API_URL}/api/users/managers?page=${currentPage}`;
 
-      if (searchQuery && searchQuery.trim() !== '') {
-        url += `&search=${encodeURIComponent(searchQuery.trim())}`;
+      // Use provided searchTerm or fall back to component state
+      const searchValue = searchTerm !== null ? searchTerm : searchQuery;
+
+      if (searchValue && searchValue.trim() !== '') {
+        url += `&search=${encodeURIComponent(searchValue.trim())}`;
+        console.log(`Filtering by search: ${searchValue}`);
       }
 
       url += `&sortBy=${sortBy}&sortOrder=${sortOrder}`;
@@ -60,12 +78,18 @@ const ManagerManagement = () => {
         }
       });
 
+      console.log('Response data:', response.data);
+
       if (response.data && response.data.success) {
+        console.log('Managers received:', response.data.managers?.length || 0);
+        console.log('Total pages:', response.data.pagination?.totalPages || 1);
+
         setManagers(response.data.managers || []);
         setTotalPages(response.data.pagination?.totalPages || 1);
 
         if (response.data.managers && response.data.managers.length === 0 && currentPage > 1) {
           // If we get an empty page and we're not on page 1, go back to page 1
+          console.log('Empty page, going back to page 1');
           setCurrentPage(1);
         }
       } else {
@@ -129,7 +153,8 @@ const ManagerManagement = () => {
   const handleSearch = (e) => {
     e.preventDefault();
     setCurrentPage(1); // Reset to first page on new search
-    fetchManagers();
+    fetchManagers(searchQuery); // Pass the current search query directly
+    console.log('Search submitted with query:', searchQuery);
   };
 
   // Function to clear search and filters
@@ -138,7 +163,8 @@ const ManagerManagement = () => {
     setCurrentPage(1);
     setSortBy('createdAt');
     setSortOrder('desc');
-    // fetchManagers will be called by the useEffect when state changes
+    fetchManagers(''); // Explicitly fetch with empty search
+    console.log('Filters cleared');
   };
 
   const handleInputChange = (e) => {
@@ -381,7 +407,15 @@ const ManagerManagement = () => {
           <input
             type="text"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              // If search is cleared, reset to page 1 and fetch immediately
+              if (e.target.value === '') {
+                setCurrentPage(1);
+                fetchManagers('');
+              }
+              // For non-empty searches, debouncing is handled by useEffect
+            }}
             onKeyDown={(e) => e.key === 'Enter' && handleSearch(e)}
             placeholder="Search managers by name or email"
             className="flex-1 border border-gray-300 rounded-l px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -623,20 +657,81 @@ const ManagerManagement = () => {
                       </svg>
                     </button>
                     
-                    {/* Page numbers */}
-                    {[...Array(totalPages)].map((_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setCurrentPage(i + 1)}
-                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                          currentPage === i + 1
-                            ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                        }`}
-                      >
-                        {i + 1}
-                      </button>
-                    ))}
+                    {/* Page numbers - show limited range for better UX */}
+                    {(() => {
+                      const pageButtons = [];
+                      const maxVisiblePages = 5;
+                      let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+                      let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+                      // Adjust start page if we're near the end
+                      if (endPage - startPage + 1 < maxVisiblePages) {
+                        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                      }
+
+                      // Add first page button if not included in range
+                      if (startPage > 1) {
+                        pageButtons.push(
+                          <button
+                            key="first-page"
+                            onClick={() => setCurrentPage(1)}
+                            className="relative inline-flex items-center px-4 py-2 border text-sm font-medium bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                          >
+                            1
+                          </button>
+                        );
+
+                        // Add ellipsis if there's a gap
+                        if (startPage > 2) {
+                          pageButtons.push(
+                            <span key="start-ellipsis" className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                              ...
+                            </span>
+                          );
+                        }
+                      }
+
+                      // Add page buttons in the visible range
+                      for (let i = startPage; i <= endPage; i++) {
+                        pageButtons.push(
+                          <button
+                            key={i}
+                            onClick={() => setCurrentPage(i)}
+                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                              currentPage === i
+                                ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                                : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                            }`}
+                          >
+                            {i}
+                          </button>
+                        );
+                      }
+
+                      // Add last page button if not included in range
+                      if (endPage < totalPages) {
+                        // Add ellipsis if there's a gap
+                        if (endPage < totalPages - 1) {
+                          pageButtons.push(
+                            <span key="end-ellipsis" className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                              ...
+                            </span>
+                          );
+                        }
+
+                        pageButtons.push(
+                          <button
+                            key="last-page"
+                            onClick={() => setCurrentPage(totalPages)}
+                            className="relative inline-flex items-center px-4 py-2 border text-sm font-medium bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                          >
+                            {totalPages}
+                          </button>
+                        );
+                      }
+
+                      return pageButtons;
+                    })()}
                     
                     <button
                       onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}

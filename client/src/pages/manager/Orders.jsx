@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { debounce } from 'lodash';
 
 const ManagerOrders = () => {
   const [orders, setOrders] = useState([]);
@@ -16,7 +17,7 @@ const ManagerOrders = () => {
 
   useEffect(() => {
     fetchOrders();
-  }, [activeTab, currentPage, selectedDateRange, customDateRange, searchQuery]); // Added searchQuery and fetchOrders is defined in the same component
+  }, [activeTab, currentPage, selectedDateRange, customDateRange]); // Base dependencies
 
   const fetchOrders = async () => {
     try {
@@ -193,10 +194,37 @@ const ManagerOrders = () => {
     );
   };
 
+  // Debounce search query updates
+  const debouncedSearch = useCallback(
+    debounce((query) => {
+      console.log('Debounced search query:', query);
+      setCurrentPage(1); // Reset to first page on search
+      fetchOrders();
+    }, 500),
+    [] // Empty dependency array since fetchOrders is defined in the component
+  );
+
+  // Separate effect for search query to use debouncing
+  useEffect(() => {
+    if (searchQuery.trim() !== '') {
+      debouncedSearch(searchQuery);
+    }
+  }, [searchQuery, debouncedSearch]);
+
+  // Debug function for order structure
+  const debugOrderStructure = (order) => {
+    // This is just a debugging function that logs order structure
+    // It doesn't need to render anything
+    return null;
+  };
+
+
+
   const handleSearch = (e) => {
     e.preventDefault();
     setCurrentPage(1); // Reset to first page on new search
-    // fetchOrders will be called by the useEffect when searchQuery changes
+    fetchOrders(); // Explicitly fetch orders with the current search query
+    console.log('Search submitted with query:', searchQuery);
   };
 
   const clearFilters = () => {
@@ -205,7 +233,7 @@ const ManagerOrders = () => {
     setCustomDateRange({ from: '', to: '' });
     setActiveTab('all');
     setCurrentPage(1);
-    // fetchOrders will be called by the useEffect when state changes
+    fetchOrders(); // Explicitly fetch orders with cleared filters
   };
 
   const handleStatusChange = async (orderId, newStatus) => {
@@ -380,19 +408,6 @@ const ManagerOrders = () => {
     return order.customerId || order.userId || null;
   };
 
-  // Debug function to log order structure
-  const debugOrderStructure = (order) => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Order structure:', {
-        id: order._id,
-        user_id: order.user_id,
-        user: order.user,
-        customer: order.customer,
-        customerId: order.customerId,
-        userId: order.userId
-      });
-    }
-  };
 
   // Get status badge color
   const getStatusBadgeColor = (status) => {
@@ -465,10 +480,21 @@ const ManagerOrders = () => {
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  const newValue = e.target.value;
+                  setSearchQuery(newValue);
+
+                  // If search is cleared, fetch orders immediately
+                  if (newValue === '') {
+                    setCurrentPage(1);
+                    fetchOrders();
+                  }
+                  // For non-empty searches, debouncing is handled by useEffect
+                }}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch(e)}
                 placeholder="Search by order ID or customer name"
                 className="flex-1 border border-gray-300 rounded-l px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                aria-label="Search orders"
               />
               <button
                 type="submit"

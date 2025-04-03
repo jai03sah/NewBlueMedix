@@ -26,12 +26,6 @@ export const createOrder = async (req, res) => {
       });
     }
 
-    // Check if user has permission to create an order for this franchise
-    // const user = await User.findByToke(token);
-    // if (!user) {
-    //   return res.status(404).json({ success: false, message: 'user not found' });
-    // }
-
     // Check if product exists
     const product = await Product.findById(product_id);
     if (!product) {
@@ -53,6 +47,25 @@ export const createOrder = async (req, res) => {
     // Generate unique order ID
     const order_id = `ORD-${Date.now()}-${uuidv4().substring(0, 8)}`;
 
+    // Calculate delivery charge based on pincode comparison
+    let calculatedDeliveryCharge = 0;
+
+    // If delivery address pincode is different from franchise pincode, add Rs 40 delivery charge
+    if (address.pincode !== franchiseExists.address.pincode) {
+      calculatedDeliveryCharge = 40; // Rs 40 delivery charge for different pincode
+      console.log(`Delivery charge of Rs ${calculatedDeliveryCharge} applied for different pincode delivery`);
+      console.log(`Delivery pincode: ${address.pincode}, Franchise pincode: ${franchiseExists.address.pincode}`);
+    } else {
+      console.log('No delivery charge applied as delivery is within same pincode');
+    }
+
+    // Use the calculated delivery charge if none was provided in the request
+    const finalDeliveryCharge = deliveryCharge !== undefined ? deliveryCharge : calculatedDeliveryCharge;
+
+    // Calculate the final total amount
+    const finalSubtotalAmount = subtotalAmount || product.price;
+    const finalTotalAmount = totalAmount || (finalSubtotalAmount + finalDeliveryCharge);
+
     // Create the order
     const order = await Order.create({
       user: req.user._id,
@@ -63,9 +76,9 @@ export const createOrder = async (req, res) => {
         image: product.image
       },
       deliveryAddress,
-      subtotalAmount: subtotalAmount || product.price,
-      totalAmount: totalAmount || product.price + (deliveryCharge || 0),
-      deliveryCharge: deliveryCharge || 0,
+      subtotalAmount: finalSubtotalAmount,
+      totalAmount: finalTotalAmount,
+      deliveryCharge: finalDeliveryCharge,
       franchise,
       deliverystatus: 'pending',
       paymentStatus: 'pending'

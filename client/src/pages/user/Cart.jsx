@@ -12,6 +12,9 @@ const Cart = () => {
   const [franchises, setFranchises] = useState([]);
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [addresses, setAddresses] = useState([]);
+  const [deliveryCharge, setDeliveryCharge] = useState(0);
+  const [selectedFranchiseDetails, setSelectedFranchiseDetails] = useState(null);
+  const [selectedAddressDetails, setSelectedAddressDetails] = useState(null);
   const navigate = useNavigate();
 
   // Fetch cart items
@@ -20,7 +23,7 @@ const Cart = () => {
       try {
         setLoading(true);
         const token = localStorage.getItem('token');
-        
+
         const response = await axios.get(
           `${process.env.REACT_APP_API_URL}/api/cart`,
           {
@@ -80,6 +83,7 @@ const Cart = () => {
           // If addresses are available, select the first one by default
           if (response.data.addresses && response.data.addresses.length > 0) {
             setDeliveryAddress(response.data.addresses[0]._id);
+            setSelectedAddressDetails(response.data.addresses[0]);
           } else {
             // If no addresses, show a message to the user
             toast.info('Please add a delivery address to continue with checkout');
@@ -95,6 +99,48 @@ const Cart = () => {
     fetchFranchises();
     fetchAddresses();
   }, []);
+
+  // Calculate delivery charge when franchise or address changes
+  useEffect(() => {
+    const calculateDeliveryCharge = () => {
+      // If either franchise or address is not selected, set default charge to 0
+      if (!selectedFranchiseDetails || !selectedAddressDetails) {
+        setDeliveryCharge(0);
+        return;
+      }
+
+      // Compare pincodes and set delivery charge accordingly
+      if (selectedFranchiseDetails.address.pincode === selectedAddressDetails.pincode) {
+        // Same pincode - no delivery charge
+        setDeliveryCharge(0);
+      } else {
+        // Different pincode - Rs 40 delivery charge
+        setDeliveryCharge(40);
+      }
+    };
+
+    calculateDeliveryCharge();
+  }, [selectedFranchiseDetails, selectedAddressDetails]);
+
+  // Update selected franchise details when franchise changes
+  useEffect(() => {
+    if (selectedFranchise && franchises.length > 0) {
+      const franchise = franchises.find(f => f._id === selectedFranchise);
+      setSelectedFranchiseDetails(franchise);
+    } else {
+      setSelectedFranchiseDetails(null);
+    }
+  }, [selectedFranchise, franchises]);
+
+  // Update selected address details when address changes
+  useEffect(() => {
+    if (deliveryAddress && addresses.length > 0) {
+      const address = addresses.find(a => a._id === deliveryAddress);
+      setSelectedAddressDetails(address);
+    } else {
+      setSelectedAddressDetails(null);
+    }
+  }, [deliveryAddress, addresses]);
 
   // Update cart item quantity
   const updateQuantity = async (cartItemId, newQuantity) => {
@@ -246,13 +292,14 @@ const Cart = () => {
       
       // Create an order for each product in the cart
       for (const item of cartItems) {
+        const itemSubtotal = item.productid.price * (1 - item.productid.discount / 100) * item.quantity;
         const orderData = {
           product_id: item.productid._id,
           deliveryAddress: deliveryAddress,
           franchise: selectedFranchise,
-          subtotalAmount: item.productid.price * (1 - item.productid.discount / 100) * item.quantity,
-          totalAmount: (item.productid.price * (1 - item.productid.discount / 100) * item.quantity) + 10, // Adding $10 delivery charge
-          deliveryCharge: 10
+          subtotalAmount: itemSubtotal,
+          totalAmount: itemSubtotal + deliveryCharge,
+          deliveryCharge: deliveryCharge
         };
         
         await axios.post(
@@ -431,12 +478,24 @@ const Cart = () => {
               </div>
               <div className="flex justify-between mb-2">
                 <span className="text-gray-600">Delivery Fee</span>
-                <span className="font-medium">$10.00</span>
+                <span className="font-medium">
+                  {deliveryCharge > 0 ?
+                    `Rs ${deliveryCharge.toFixed(2)}` :
+                    <span className="text-green-600">Free</span>
+                  }
+                  {selectedFranchiseDetails && selectedAddressDetails && (
+                    <span className="block text-xs text-gray-500 mt-1">
+                      {selectedFranchiseDetails.address.pincode === selectedAddressDetails.pincode
+                        ? "Same pincode delivery - no charge"
+                        : "Different pincode delivery - Rs 40 charge"}
+                    </span>
+                  )}
+                </span>
               </div>
               <div className="border-t my-4"></div>
               <div className="flex justify-between mb-4">
                 <span className="text-lg font-semibold">Total</span>
-                <span className="text-lg font-semibold">${(totalPrice + 10).toFixed(2)}</span>
+                <span className="text-lg font-semibold">${(totalPrice + deliveryCharge).toFixed(2)}</span>
               </div>
               
               {/* Franchise Selection */}

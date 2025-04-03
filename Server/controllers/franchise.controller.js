@@ -306,7 +306,9 @@ export const assignManagerToFranchise = async (req, res) => {
 export const getFranchiseOrders = async (req, res) => {
   try {
     const { franchiseId } = req.params;
-    const { status, startDate, endDate, page = 1, limit = 10 } = req.query;
+    const { status, startDate, endDate, page = 1, limit = 10, search } = req.query;
+
+    console.log('Get franchise orders query params:', req.query);
 
     // Check if franchise exists
     const franchise = await Franchise.findById(franchiseId);
@@ -315,8 +317,8 @@ export const getFranchiseOrders = async (req, res) => {
     }
 
     // Check if user has permission to view franchise orders
-    if (req.user.role === 'orderManager' && 
-        req.user.franchise && 
+    if (req.user.role === 'orderManager' &&
+        req.user.franchise &&
         req.user.franchise.toString() !== franchiseId) {
       return res.status(403).json({ success: false, message: 'Not authorized to view orders for this franchise' });
     }
@@ -324,7 +326,7 @@ export const getFranchiseOrders = async (req, res) => {
     // Build filter
     const filter = { franchise: franchiseId };
     if (status) filter.deliverystatus = status;
-    
+
     // Date range filter
     if (startDate || endDate) {
       filter.createdAt = {};
@@ -336,32 +338,77 @@ export const getFranchiseOrders = async (req, res) => {
       }
     }
 
+    // Search filter for order ID or customer name
+    if (search && search.trim() !== '') {
+      const searchTerm = search.trim();
+      console.log('Searching with term:', searchTerm);
+
+      // First, try to find users matching the search term
+      const users = await User.find({
+        name: { $regex: searchTerm, $options: 'i' }
+      }).select('_id');
+
+      const userIds = users.map(user => user._id);
+
+      // Build the search filter
+      filter.$or = [
+        // Search by order_id field (string field for order number)
+        { order_id: { $regex: searchTerm, $options: 'i' } },
+        // Search by user ID if users were found
+        ...(userIds.length > 0 ? [{ user: { $in: userIds } }] : [])
+      ];
+
+      // Try to match by ObjectId if the search term looks like a valid ObjectId
+      if (searchTerm.match(/^[0-9a-fA-F]{24}$/)) {
+        filter.$or.push({ _id: searchTerm });
+      }
+
+      console.log('Search filter:', JSON.stringify(filter));
+    }
+
     // Calculate pagination
     const skip = (Number(page) - 1) * Number(limit);
 
-    // Get orders
-    const orders = await Order.find(filter)
-      .populate('user', 'name email')
-      .populate('product_id', 'name price image')
-      .populate('deliveryAddress')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(Number(limit));
+    try {
+      console.log('Executing query with filter:', JSON.stringify(filter, null, 2));
 
-    // Get total count for pagination
-    const totalOrders = await Order.countDocuments(filter);
+      // Get orders
+      const orders = await Order.find(filter)
+        .populate('user', 'name email')
+        .populate('product_id', 'name price image')
+        .populate('deliveryAddress')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(Number(limit));
 
-    return res.status(200).json({
-      success: true,
-      franchise: franchise.name,
-      orders,
-      pagination: {
-        total: totalOrders,
-        page: Number(page),
-        limit: Number(limit),
-        pages: Math.ceil(totalOrders / Number(limit))
+      // Get total count for pagination
+      const totalOrders = await Order.countDocuments(filter);
+
+      console.log(`Found ${orders.length} orders out of ${totalOrders} total`);
+
+      if (orders.length > 0) {
+        console.log('Sample order:', JSON.stringify(orders[0], null, 2));
       }
-    });
+
+      return res.status(200).json({
+        success: true,
+        franchise: franchise.name,
+        orders,
+        pagination: {
+          total: totalOrders,
+          page: Number(page),
+          limit: Number(limit),
+          pages: Math.ceil(totalOrders / Number(limit))
+        }
+      });
+    } catch (queryError) {
+      console.error('Error executing order query:', queryError);
+      return res.status(500).json({
+        success: false,
+        message: 'Error executing order query',
+        error: queryError.message
+      });
+    }
   } catch (error) {
     console.error('Get franchise orders error:', error);
     return res.status(500).json({ success: false, message: 'Server error', error: error.message });

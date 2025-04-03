@@ -3,14 +3,90 @@ import User from '../model/user.model.js';
 import Franchise from '../model/franchise.model.js';
 import bcrypt from 'bcryptjs';
 
-// Get all users (admin only) 
+// Get all users (admin only)
 export const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find()
-      .select('-password')
-      .populate('franchise', 'name address contactNumber email');
+    // Log the raw query for debugging
+    console.log('Raw query:', req.query);
 
-    return res.status(200).json({ success: true, users });
+    const {
+      page = 1,
+      limit = 10,
+      role,
+      search,
+      sortBy = 'createdAt',
+      sortOrder = 'desc'
+    } = req.query;
+
+    // Build query
+    const query = {};
+
+    // Log all query parameters for debugging
+    console.log('Query parameters:', { page, limit, role, search, sortBy, sortOrder });
+
+    // Filter by role if provided
+    if (role) {
+      // Make sure role is a string and trim any whitespace
+      const roleValue = String(role).trim();
+      console.log(`Filtering by role: ${roleValue}`);
+
+      // Check if the role value is valid
+      if (['admin', 'orderManager', 'user'].includes(roleValue)) {
+        query.role = roleValue;
+      } else {
+        console.log(`Invalid role value: ${roleValue}`);
+      }
+    }
+
+    // Search by name or email if provided
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    // Build sort object
+    const sort = {};
+    sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+    // Calculate pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Log the query for debugging
+    console.log('User query:', JSON.stringify(query));
+    console.log('Sort:', JSON.stringify(sort));
+    console.log('Skip:', skip, 'Limit:', parseInt(limit));
+
+    // Execute query with pagination
+    const users = await User.find(query)
+      .select('-password')
+      .populate('franchise', 'name address contactNumber email')
+      .sort(sort)
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    // Get total count for pagination
+    const totalUsers = await User.countDocuments(query);
+    const totalPages = Math.ceil(totalUsers / parseInt(limit));
+
+    console.log('Total users found:', totalUsers);
+    console.log('Total pages:', totalPages);
+    console.log('Users returned:', users.length);
+
+    // Log the roles of returned users for debugging
+    console.log('User roles:', users.map(user => user.role));
+
+    return res.status(200).json({
+      success: true,
+      users,
+      pagination: {
+        total: totalUsers,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages
+      }
+    });
   } catch (error) {
     console.error('Get all users error:', error);
     return res.status(500).json({ success: false, message: 'Server error', error: error.message });
@@ -208,11 +284,65 @@ export const createManager = async (req, res) => {
 // Get all managers (admin only)
 export const getAllManagers = async (req, res) => {
   try {
-    const managers = await User.find({ role: 'orderManager' })
-      .select('-password')
-      .populate('franchise', 'name address contactNumber email');
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      sortBy = 'createdAt',
+      sortOrder = 'desc'
+    } = req.query;
 
-    return res.status(200).json({ success: true, managers });
+    console.log('Manager query parameters:', { page, limit, search, sortBy, sortOrder });
+
+    // Build query
+    const query = { role: 'orderManager' };
+
+    // Search by name or email if provided
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    // Build sort object
+    const sort = {};
+    sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+    // Calculate pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Log the query for debugging
+    console.log('Manager query:', JSON.stringify(query));
+    console.log('Sort:', JSON.stringify(sort));
+    console.log('Skip:', skip, 'Limit:', parseInt(limit));
+
+    // Execute query with pagination
+    const managers = await User.find(query)
+      .select('-password')
+      .populate('franchise', 'name address contactNumber email')
+      .sort(sort)
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    // Get total count for pagination
+    const totalManagers = await User.countDocuments(query);
+    const totalPages = Math.ceil(totalManagers / parseInt(limit));
+
+    console.log('Total managers found:', totalManagers);
+    console.log('Total pages:', totalPages);
+    console.log('Managers returned:', managers.length);
+
+    return res.status(200).json({
+      success: true,
+      managers,
+      pagination: {
+        total: totalManagers,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages
+      }
+    });
   } catch (error) {
     console.error('Get all managers error:', error);
     return res.status(500).json({ success: false, message: 'Server error', error: error.message });
