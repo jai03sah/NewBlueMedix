@@ -249,14 +249,24 @@ export const getLowStockItems = async (req, res) => {
       .populate('franchise', 'name location');
 
     // Filter items with quantity below threshold
-    const lowStockItems = allStockItems.filter(item => 
-      item.quantity <= (item.product.lowStockThreshold || 10)
-    );
+    // const lowStockItems = allStockItems.filter(item => 
+    //   item.quantity <= (item.product.lowStockThreshold || 10)
+    // );
+    
+    const lowStockItems = allStockItems.filter(item => {
+      const threshold = item.product.lowStockThreshold || 10;
+      return item.quantity > 0 && item.quantity <= threshold;
+    });
+    
+    const outOfStockItems = allStockItems.filter(item => item.quantity === 0);
+    
 
     return res.status(200).json({
       success: true,
       lowStockItems,
-      totalItems: lowStockItems.length
+      outOfStockItems,
+      totalLowStockItems: lowStockItems.length,
+      totalItems: lowStockItems.length 
     });
   } catch (error) {
     console.error('Get low stock items error:', error);

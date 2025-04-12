@@ -19,7 +19,7 @@ const UserLogout = () => {
         localStorage.removeItem('user');
         localStorage.removeItem('token');
         
-        toast.success('Logged out successfully');
+        // toast.success('Logged out successfully');
         navigate('/login');
       } catch (error) {
         console.error('Logout error:', error);
@@ -36,7 +36,7 @@ const UserLogout = () => {
       <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
         <div className="flex justify-center mb-6">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-        </div>
+        </div> 
         <h2 className="text-2xl font-bold text-center text-gray-800 mb-4">Logging Out</h2>
         <p className="text-center text-gray-600">Please wait while we log you out...</p>
       </div>

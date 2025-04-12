@@ -10,7 +10,7 @@ const UserDashboard = () => {
     email: '',
     phoneNumber: '',
     address: ''
-  });
+  }); 
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState([]);
 

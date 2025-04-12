@@ -39,7 +39,7 @@ const Login = () => {
         localStorage.setItem('user', JSON.stringify(response.data.user));
         localStorage.setItem('token', response.data.token);
         
-        toast.success('Login successful!');
+        // toast.success('Login successful!');
         
         // Check if there's a pending cart item
         const pendingCartItem = localStorage.getItem('pendingCartItem');

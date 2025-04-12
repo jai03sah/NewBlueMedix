@@ -25,7 +25,7 @@ const AdminLayout = ({ children }) => {
           <Link 
             to="/admin/dashboard" 
             className={`block py-2.5 px-4 rounded transition duration-200 ${isActive('/admin/dashboard')}`}
-          >
+          > 
             Dashboard
           </Link>
           <Link 
@@ -120,7 +120,7 @@ const AdminLayout = ({ children }) => {
                 <Link
                   to="/admin/profile"
                   className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                >
+                > 
                   Your Profile
                 </Link>
                 <Link
@@ -134,7 +134,7 @@ const AdminLayout = ({ children }) => {
             <Link
               to="/admin/logout"
               className="ml-4 px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded-md"
-            >
+            > 
               Logout 
             </Link>
           </div>

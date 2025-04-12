@@ -5,12 +5,20 @@ import { scrollToElement, handleHashLinkClick } from '../../utils/scrollUtils';
 
 const PublicProductsLayout = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
 
   // Check if user is logged in
   const isAuthenticated = localStorage.getItem('token');
-  const user = JSON.parse(localStorage.getItem('user'));
+  
+  // Get user from localStorage
+  const getUserData = () => {
+    const userData = JSON.parse(localStorage.getItem('user'));
+    return userData;
+  };
+  
+  const user = getUserData();
 
   // Handle hash links when the component mounts or location changes
   useEffect(() => {
@@ -22,6 +30,34 @@ const PublicProductsLayout = ({ children }) => {
       }, 100);
     }
   }, [location]);
+  
+  // Update cart count when user data changes
+  useEffect(() => {
+    if (isAuthenticated) {
+      // Initial cart count
+      const userData = getUserData();
+      setCartCount(userData?.shopping_cart?.length || 0);
+      
+      // Listen for storage events (when cart is updated)
+      const handleStorageChange = () => {
+        const updatedUser = getUserData();
+        setCartCount(updatedUser?.shopping_cart?.length || 0);
+      };
+      
+      window.addEventListener('storage', handleStorageChange);
+      
+      // Also check for updates every second (as a fallback)
+      const intervalId = setInterval(() => {
+        const updatedUser = getUserData();
+        setCartCount(updatedUser?.shopping_cart?.length || 0);
+      }, 1000);
+      
+      return () => {
+        window.removeEventListener('storage', handleStorageChange);
+        clearInterval(intervalId);
+      };
+    }
+  }, [isAuthenticated]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -68,7 +104,7 @@ const PublicProductsLayout = ({ children }) => {
                 </svg>
                 {isAuthenticated && (
                   <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                    {user?.shopping_cart?.length || 0}
+                    {cartCount}
                   </span>
                 )}
               </Link>

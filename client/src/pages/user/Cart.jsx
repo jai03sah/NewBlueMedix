@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { toast } from 'react-toastify';
+import { toast } from 'react-toastify'; 
 
 const Cart = () => {
   const [cartItems, setCartItems] = useState([]);
@@ -10,7 +10,7 @@ const Cart = () => {
   const [totalPrice, setTotalPrice] = useState(0);
   const [selectedFranchise, setSelectedFranchise] = useState('');
   const [franchises, setFranchises] = useState([]);
-  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [deliveryAddress, setDeliveryAddress] = useState(''); 
   const [addresses, setAddresses] = useState([]);
   const [deliveryCharge, setDeliveryCharge] = useState(0);
   const [selectedFranchiseDetails, setSelectedFranchiseDetails] = useState(null);
@@ -100,9 +100,9 @@ const Cart = () => {
     fetchAddresses();
   }, []);
 
-  // Calculate delivery charge when franchise or address changes
+  // Calculate delivery charge based on pincode
   useEffect(() => {
-    const calculateDeliveryCharge = () => {
+   const calculateDeliveryCharge = () => {
       // If either franchise or address is not selected, set default charge to 0
       if (!selectedFranchiseDetails || !selectedAddressDetails) {
         setDeliveryCharge(0);
@@ -111,26 +111,17 @@ const Cart = () => {
 
       // Compare pincodes and set delivery charge accordingly
       if (selectedFranchiseDetails.address.pincode === selectedAddressDetails.pincode) {
-        // Same pincode - no delivery charge
+        // Same pincode - free delivery
         setDeliveryCharge(0);
       } else {
-        // Different pincode - Rs 40 delivery charge
-        setDeliveryCharge(40);
+        // Different pincode - $2 delivery charge
+        setDeliveryCharge(2);
       }
     };
 
     calculateDeliveryCharge();
   }, [selectedFranchiseDetails, selectedAddressDetails]);
-
-  // Update selected franchise details when franchise changes
-  useEffect(() => {
-    if (selectedFranchise && franchises.length > 0) {
-      const franchise = franchises.find(f => f._id === selectedFranchise);
-      setSelectedFranchiseDetails(franchise);
-    } else {
-      setSelectedFranchiseDetails(null);
-    }
-  }, [selectedFranchise, franchises]);
+    
 
   // Update selected address details when address changes
   useEffect(() => {
@@ -141,6 +132,16 @@ const Cart = () => {
       setSelectedAddressDetails(null);
     }
   }, [deliveryAddress, addresses]);
+  
+  // Update selected franchise details when franchise changes
+  useEffect(() => {
+    if (selectedFranchise && franchises.length > 0) {
+      const franchise = franchises.find(f => f._id === selectedFranchise);
+      setSelectedFranchiseDetails(franchise);
+    } else {
+      setSelectedFranchiseDetails(null);
+    }
+  }, [selectedFranchise, franchises]);
 
   // Update cart item quantity
   const updateQuantity = async (cartItemId, newQuantity) => {
@@ -180,6 +181,14 @@ const Cart = () => {
         );
         
         setTotalPrice(updatedCart.data.totalPrice);
+        
+        // Update the user object in localStorage to reflect the updated cart
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (user) {
+          // Trigger storage event to update cart count in header
+          window.dispatchEvent(new Event('storage'));
+        }
+        
         toast.success('Cart updated');
       } else {
         toast.error('Failed to update cart');
@@ -219,10 +228,22 @@ const Cart = () => {
         );
         
         setTotalPrice(updatedCart.data.totalPrice);
+        
+        // Update the user object in localStorage to reflect the updated cart
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (user && user.shopping_cart) {
+          // Remove the product from shopping_cart array
+          user.shopping_cart = user.shopping_cart.filter(id => id !== cartItems.find(item => item._id === cartItemId)?.productid?._id);
+          localStorage.setItem('user', JSON.stringify(user));
+          
+          // Trigger storage event to update cart count in header
+          window.dispatchEvent(new Event('storage'));
+        }
+        
         toast.success('Item removed from cart');
       } else {
         toast.error('Failed to remove item');
-      }
+      } 
     } catch (error) {
       console.error('Remove item error:', error);
       toast.error('Failed to remove item');
@@ -231,7 +252,7 @@ const Cart = () => {
 
   // Clear cart
   const clearCart = async () => {
-    try {
+    try { 
       const token = localStorage.getItem('token');
       
       const response = await axios.delete(
@@ -246,6 +267,16 @@ const Cart = () => {
       if (response.data.success) {
         setCartItems([]);
         setTotalPrice(0);
+
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (user) {
+        user.shopping_cart = []; // Clear the shopping cart
+        localStorage.setItem('user', JSON.stringify(user));
+      }
+
+      // Trigger a custom event to notify UserLayout
+      window.dispatchEvent(new Event('cartUpdated'));
+
         toast.success('Cart cleared');
       } else {
         toast.error('Failed to clear cart');
@@ -302,7 +333,7 @@ const Cart = () => {
           deliveryCharge: deliveryCharge
         };
         
-        await axios.post(
+        const response = await axios.post(
           `${process.env.REACT_APP_API_URL}/api/orders`,
           orderData,
           {
@@ -311,6 +342,13 @@ const Cart = () => {
             }
           }
         );
+        
+        // Check if the response indicates an out-of-stock situation
+        if (response.data.outOfStock) {
+          // Show a specific message for out-of-stock items
+          toast.warning(response.data.message || 'This product is out of stock at the selected franchise. Please try ordering from another franchise.');
+          return; // Stop processing further items
+        }
       }
       
       // Clear the cart after successful checkout
@@ -320,7 +358,13 @@ const Cart = () => {
       navigate('/orders');
     } catch (error) {
       console.error('Checkout error:', error);
-      toast.error('Failed to place order');
+      
+      // Check if the error response contains out-of-stock information
+      if (error.response && error.response.data && error.response.data.outOfStock) {
+        toast.warning(error.response.data.message || 'This product is out of stock at the selected franchise. Please try ordering from another franchise.');
+      } else {
+        toast.error('Failed to place order');
+      }
     }
   };
 
@@ -477,33 +521,33 @@ const Cart = () => {
                 <span className="font-medium">${totalPrice.toFixed(2)}</span>
               </div>
               <div className="flex justify-between mb-2">
-                <span className="text-gray-600">Delivery Fee</span>
-                <span className="font-medium">
+                <span className="text-gray-600">Delivery Fee</span> 
+                <span className="font-medium"> 
                   {deliveryCharge > 0 ?
-                    `Rs ${deliveryCharge.toFixed(2)}` :
+                    <span className="text-orange-600">${deliveryCharge.toFixed(2)}</span> :
                     <span className="text-green-600">Free</span>
                   }
                   {selectedFranchiseDetails && selectedAddressDetails && (
                     <span className="block text-xs text-gray-500 mt-1">
                       {selectedFranchiseDetails.address.pincode === selectedAddressDetails.pincode
-                        ? "Same pincode delivery - no charge"
-                        : "Different pincode delivery - Rs 40 charge"}
+                        ? "Same pincode - Free delivery"
+                        : "Different pincode - $2 delivery charge"}
                     </span>
-                  )}
+                  )} 
                 </span>
               </div>
               <div className="border-t my-4"></div>
               <div className="flex justify-between mb-4">
                 <span className="text-lg font-semibold">Total</span>
                 <span className="text-lg font-semibold">${(totalPrice + deliveryCharge).toFixed(2)}</span>
-              </div>
+              </div> 
               
               {/* Franchise Selection */}
               <div className="mb-4">
                 <label className="block text-gray-700 text-sm font-medium mb-2">
                   Select Franchise
                 </label>
-                <select
+                <select 
                   name="franchise"
                   value={selectedFranchise}
                   onChange={(e) => setSelectedFranchise(e.target.value)}

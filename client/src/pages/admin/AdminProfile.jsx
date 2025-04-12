@@ -9,14 +9,14 @@ const AdminProfile = () => {
   const [profileData, setProfileData] = useState({
     name: '',
     email: '',
-    phone: '',
+    phone: '', 
     img_url: ''
   });
   const [passwordData, setPasswordData] = useState({
     oldpassword: '',
     newpassword: '',
     confirmPassword: ''
-  });
+  }); 
   const [imagePreview, setImagePreview] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -109,7 +109,7 @@ const AdminProfile = () => {
         setUser(updatedUser);
         
         toast.success('Profile updated successfully');
-      } else {
+      } else { 
         toast.error('Failed to update profile');
       }
     } catch (error) {
@@ -374,7 +374,7 @@ const AdminProfile = () => {
                   : 'N/A'}
               </p>
             </div>
-            <div>
+            <div> 
               <p className="text-sm text-gray-600">Last Updated</p>
               <p className="font-medium">
                 {user?.updatedAt 

@@ -3,6 +3,7 @@ import Product from '../model/product.model.js';
 import User from '../model/user.model.js';
 import Franchise from '../model/franchise.model.js';
 import Address from '../model/address.model.js';
+import FranchiseStock from '../model/franchisestock.model.js';
 import { v4 as uuidv4 } from 'uuid';
 
 // Create a new order
@@ -12,7 +13,7 @@ export const createOrder = async (req, res) => {
       product_id,
       product_details,
       deliveryAddress,
-      subtotalAmount,
+      subtotalAmount, 
       totalAmount,
       deliveryCharge,
       franchise
@@ -43,6 +44,21 @@ export const createOrder = async (req, res) => {
     if (!address) {
       return res.status(404).json({ success: false, message: 'Address not found' });
     }
+    
+    // Check if the product is in stock at the specified franchise
+    const franchiseStock = await FranchiseStock.findOne({
+      franchise: franchise,
+      product: product_id
+    });
+    
+    // If no stock entry exists or quantity is 0, the product is out of stock
+    if (!franchiseStock || franchiseStock.quantity === 0) {
+      return res.status(200).json({ 
+        success: false, 
+        outOfStock: true,
+        message: 'This product is out of stock at the selected franchise. Please try ordering from another franchise.' 
+      });
+    }
 
     // Generate unique order ID
     const order_id = `ORD-${Date.now()}-${uuidv4().substring(0, 8)}`;
@@ -50,13 +66,13 @@ export const createOrder = async (req, res) => {
     // Calculate delivery charge based on pincode comparison
     let calculatedDeliveryCharge = 0;
 
-    // If delivery address pincode is different from franchise pincode, add Rs 40 delivery charge
+    // If delivery address pincode is different from franchise pincode, add $2 delivery charge
     if (address.pincode !== franchiseExists.address.pincode) {
-      calculatedDeliveryCharge = 40; // Rs 40 delivery charge for different pincode
-      console.log(`Delivery charge of Rs ${calculatedDeliveryCharge} applied for different pincode delivery`);
+      calculatedDeliveryCharge = 2; // $2 delivery charge for different pincode
+      console.log(`Delivery charge of $${calculatedDeliveryCharge} applied for different pincode delivery`);
       console.log(`Delivery pincode: ${address.pincode}, Franchise pincode: ${franchiseExists.address.pincode}`);
     } else {
-      console.log('No delivery charge applied as delivery is within same pincode');
+      console.log('Free delivery applied as delivery is within same pincode');
     }
 
     // Use the calculated delivery charge if none was provided in the request
@@ -84,9 +100,18 @@ export const createOrder = async (req, res) => {
       paymentStatus: 'pending'
     });
 
-    // Update product stock
+    // Update product warehouse stock
     product.warehouseStock = Math.max(0, product.warehouseStock - 1);
     await product.save();
+    
+    // Update franchise stock
+    try {
+      await franchiseStock.updateStock(1, false); // Decrease stock by 1
+    } catch (error) {
+      console.error('Error updating franchise stock:', error);
+      // If there's an error updating franchise stock, we should still continue
+      // as the order has been created, but log the error
+    }
 
     // Populate order with details for response
     const populatedOrder = await Order.findById(order._id)
@@ -233,7 +258,7 @@ export const updateOrderStatus = async (req, res) => {
     const order = await Order.findById(orderId);
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found' });
-    }
+    } 
 
     // Check if manager has permission to update this order
     if (req.user.role === 'orderManager' && 
@@ -248,6 +273,30 @@ export const updateOrderStatus = async (req, res) => {
       if (product) {
         product.warehouseStock += 1;
         await product.save();
+      }
+      
+      // Restore franchise stock
+      try {
+        // Find the franchise stock entry
+        let franchiseStock = await FranchiseStock.findOne({
+          franchise: order.franchise,
+          product: order.product_id
+        });
+        
+        // If stock entry exists, increment it
+        if (franchiseStock) {
+          await franchiseStock.updateStock(1, true); // Increase stock by 1
+        } else {
+          // Create new stock entry if it doesn't exist
+          franchiseStock = await FranchiseStock.create({
+            franchise: order.franchise,
+            product: order.product_id,
+            quantity: 1
+          });
+        }
+      } catch (error) {
+        console.error('Error restoring franchise stock:', error);
+        // Continue even if there's an error, but log it
       }
     }
 

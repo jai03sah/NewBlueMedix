@@ -301,7 +301,7 @@ const OrderManagement = () => {
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch(e)}
                 placeholder="Search by order ID or customer name"
                 className="flex-1 border border-gray-300 rounded-l px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              /> 
               <button
                 type="submit"
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-r"
@@ -312,7 +312,7 @@ const OrderManagement = () => {
           </div>
 
           {/* Date Range Filter */}
-          <div>
+          <div> 
             <select
               value={selectedDateRange}
               onChange={(e) => setSelectedDateRange(e.target.value)}
@@ -329,12 +329,12 @@ const OrderManagement = () => {
           {/* Custom Date Range */}
           {selectedDateRange === 'custom' && (
             <div className="flex space-x-2">
-              <input
+              <input 
                 type="date"
-                value={customDateRange.from}
+                value={customDateRange.from} 
                 onChange={(e) => setCustomDateRange({ ...customDateRange, from: e.target.value })}
                 className="flex-1 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              /> 
               <input
                 type="date"
                 value={customDateRange.to}
@@ -342,8 +342,8 @@ const OrderManagement = () => {
                 className="flex-1 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-          )}
-        </div>
+          )} 
+        </div> 
       </div>
 
       {/* Tabs */}
@@ -548,10 +548,10 @@ const OrderManagement = () => {
                     Date
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Customer
+                    Customer 
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Product
+                    Product 
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Total
@@ -572,35 +572,35 @@ const OrderManagement = () => {
                   <tr key={order._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       #{order._id.substring(order._id.length - 8)}
-                    </td>
+                    </td> 
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatDate(order.createdAt)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {order.user_id ? (
+                    </td>  
+                    <td className="px-6 py-4 whitespace-nowrap"> 
+                      {order.user ? ( 
                         <div className="flex items-center">
-                          <div className="flex-shrink-0 h-8 w-8">
+                          {/* <div className="flex-shrink-0 h-8 w-8">
                             <img 
                               className="h-8 w-8 rounded-full"
-                              src={order.user_id.img_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(order.user_id.name)}`}
-                              alt={order.user_id.name}
-                            />
-                          </div>
+                              // src={order.user_id.img_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(order.user_id.name)}`}
+                              alt={order.user.name}
+                            />  
+                          </div>  */} 
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900">
-                              {order.user_id.name}
+                              {order.user.name}
                             </div>
                             <div className="text-sm text-gray-500">
-                              {order.user_id.email}
+                              {order.user.email} 
                             </div>
                           </div>
-                        </div>
-                      ) : (
+                        </div> 
+                      ) : ( 
                         <span className="text-gray-400">User unavailable</span>
-                      )}
+                      )} 
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {order.product_id ? (
+                      {order.product_id ? ( 
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-10 w-10 bg-gray-100 rounded overflow-hidden">
                             {order.product_id.image && order.product_id.image.length > 0 ? (
@@ -608,13 +608,13 @@ const OrderManagement = () => {
                                 src={order.product_id.image[0]} 
                                 alt={order.product_id.name}
                                 className="h-full w-full object-cover"
-                              />
+                              /> 
                             ) : (
                               <div className="flex items-center justify-center h-full">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
-                              </div>
+                              </div> 
                             )}
                           </div>
                           <div className="ml-4">
@@ -625,9 +625,9 @@ const OrderManagement = () => {
                               <div className="text-sm text-gray-500">
                                 {order.franchise.name}
                               </div>
-                            )}
+                            )}  
                           </div>
-                        </div>
+                        </div> 
                       ) : (
                         <span className="text-gray-400">Product unavailable</span>
                       )}
@@ -656,7 +656,7 @@ const OrderManagement = () => {
                           className="text-blue-600 hover:text-blue-900"
                         >
                           View
-                        </Link>
+                        </Link> 
                         
                         {/* Status Update Dropdown */}
                         {order.deliverystatus !== 'delivered' && order.deliverystatus !== 'cancelled' && (
@@ -673,9 +673,9 @@ const OrderManagement = () => {
                             >
                               <option value="">Update Status</option>
                               {order.deliverystatus !== 'pending' && <option value="pending">Pending</option>}
-                              {order.deliverystatus !== 'accepted' && <option value="accepted">Accepted</option>}
-                              {order.deliverystatus !== 'processing' && <option value="processing">Processing</option>}
-                              {order.deliverystatus !== 'shipped' && <option value="shipped">Shipped</option>}
+                              {order.deliverystatus !== 'accepted' && <option value="accepted">Accepted</option>} 
+                              {/* {order.deliverystatus !== 'processing' && <option value="processing">Processing</option>} */}
+                              {/* {order.deliverystatus !== 'shipped' && <option value="shipped">Shipped</option>}  */}
                               {order.deliverystatus !== 'delivered' && <option value="delivered">Delivered</option>}
                               {order.deliverystatus !== 'cancelled' && <option value="cancelled">Cancelled</option>}
                             </select>
@@ -722,7 +722,7 @@ const OrderManagement = () => {
                     Showing page <span className="font-medium">{currentPage}</span> of{' '}
                     <span className="font-medium">{totalPages}</span>
                   </p>
-                </div>
+                </div> 
                 <div>
                   <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                     <button

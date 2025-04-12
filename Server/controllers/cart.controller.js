@@ -8,10 +8,17 @@ export const addToCart = async (req, res) => {
     const { productId, quantity, franchiseId } = req.body;
     const userId = req.user._id; // Assuming user is attached from auth middleware
 
+
+
     // Validate product exists
     const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+
+    // 🚨 Check if the product is out of stock
+    if (product.quantity === 0) {
+      return res.status(400).json({ success: false, message: 'Product is out of stock' });
     }
 
     // Validate franchise if provided

@@ -33,9 +33,9 @@ const Home = () => {
         }
       } catch (error) {
         console.error('Error fetching home page data:', error);
-        toast.error('Failed to load home page data');
+        // toast.error('Failed to load home page data'); 
       } finally {
-        setLoading(false);
+        setLoading(false); 
       }
     };
     
@@ -82,7 +82,7 @@ const Home = () => {
       </section>
 
       {/* Featured Products Section */}
-      <section className="py-12 bg-gray-50">
+      {/* <section className="py-12 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900">Featured Products</h2>
@@ -163,7 +163,104 @@ const Home = () => {
             </Link>
           </div>
         </div>
-      </section>
+      </section> */}
+
+<section className="py-12 bg-gray-50">
+  <div className="container mx-auto px-4">
+    {/* Section heading */}
+    <div className="text-center mb-12">
+      <h2 className="text-3xl font-bold text-gray-900">Featured Products</h2>
+      <p className="text-gray-600 mt-2">Discover our newest and most popular medical supplies</p>
+    </div>
+
+    {/* Loader if loading is true */}
+    {loading ? (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    ) : (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 px-4 md:px-0">
+        {/* ↑ Added md:grid-cols-3 and adjusted gap & padding for better alignment */}
+        {featuredProducts.map((product) => (
+          <div
+            key={product._id}
+            className="bg-white shadow-md rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col"
+          >
+            {/* ↑ Added flex flex-col for better layout control */}
+
+            <Link to={`/products/${product._id}`}>
+              <div className="h-48 bg-gray-200 relative">
+                {product.image && product.image.length > 0 ? (
+                  <img
+                    src={product.image[0]}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full bg-gray-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                )}
+
+                {product.discount > 0 && (
+                  <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
+                    {product.discount}% OFF
+                  </div>
+                )}
+              </div>
+            </Link>
+
+            <div className="p-4 flex flex-col flex-grow justify-between">
+              {/* ↑ Ensures name, price, and button stay well aligned even if content varies */}
+              <div>
+                <Link to={`/products/${product._id}`}>
+                  <h3 className="text-lg font-semibold text-gray-800 hover:text-blue-600">
+                    {product.name}
+                  </h3>
+                </Link>
+
+                <div className="flex items-center mt-1">
+                  <span className="text-lg font-bold text-gray-800">
+                    ${((product.price * (1 - product.discount / 100)).toFixed(2))}
+                  </span>
+                  {product.discount > 0 && (
+                    <span className="ml-2 text-sm text-gray-500 line-through">
+                      ${product.price.toFixed(2)}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <Link
+                  to={`/products/${product._id}`}
+                  className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded text-sm w-full block text-center"
+                >
+                  View Details
+                </Link>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+
+    {/* CTA Button */}
+    <div className="text-center mt-12">
+      {/* ↑ Increased top margin for spacing consistency */}
+      <Link
+        to="/products"
+        className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md text-lg font-medium"
+      >
+        View All Products
+      </Link>
+    </div>
+  </div>
+</section>
+
+
 
       {/* Categories Section */}
       <section className="py-12 bg-white">

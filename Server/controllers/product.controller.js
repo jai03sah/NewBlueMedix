@@ -34,7 +34,7 @@ export const createProduct = async (req, res) => {
     if (typeof category === 'object' && category._id) {
       categoryId = category._id.toString().trim();
       console.log('Extracted category ID from object:', categoryId);
-    }
+    } 
     // If category is a string
     else if (typeof category === 'string') {
       categoryId = category.trim();
@@ -338,7 +338,7 @@ export const updateProductStock = async (req, res) => {
         name: product.name,
         warehouseStock: product.warehouseStock
       }
-    });
+    }); 
   } catch (error) {
     console.error('Update product stock error:', error);
     return res.status(500).json({ success: false, message: 'Server error', error: error.message });

@@ -130,7 +130,6 @@ const Products = () => {
         console.error('Fetch categories error:', error);
       }
     };
-
     fetchCategories();
   }, []);
 
@@ -187,12 +186,20 @@ const Products = () => {
 
         // Update the user object in localStorage to reflect the new cart item
         const user = JSON.parse(localStorage.getItem('user'));
-        if (user && user.shopping_cart) {
+        if (user) {
+          // Initialize shopping_cart array if it doesn't exist
+          if (!user.shopping_cart) {
+            user.shopping_cart = [];
+          }
+          
           // Check if the product is already in the cart
           if (!user.shopping_cart.includes(productId)) {
             user.shopping_cart.push(productId);
             localStorage.setItem('user', JSON.stringify(user));
           }
+          
+          // Force a re-render to update the cart count in the header
+          window.dispatchEvent(new Event('storage'));
         }
       } else {
         toast.error('Failed to add item to cart');
@@ -400,9 +407,9 @@ const Products = () => {
                 {products.map((product) => (
                   <div 
                     key={product._id} 
-                    className="bg-white shadow-md rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300"
+                    className="bg-white shadow-md rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full"
                   >
-                    <Link to={`/products/${product._id}`}>
+                    <Link to={`/products/${product._id}`} className="block">
                       <div className="h-48 bg-gray-200 relative">
                         {product.image && product.image.length > 0 ? (
                           <img 
@@ -426,9 +433,9 @@ const Products = () => {
                       </div>
                     </Link>
                     
-                    <div className="p-4">
+                    <div className="p-4 flex flex-col flex-grow">
                       <Link to={`/products/${product._id}`}>
-                        <h3 className="text-lg font-semibold text-gray-800 hover:text-blue-600">{product.name}</h3>
+                        <h3 className="text-lg font-semibold text-gray-800 hover:text-blue-600 line-clamp-2 h-14">{product.name}</h3>
                       </Link>
                       
                       <div className="flex items-center mt-1">
@@ -450,7 +457,7 @@ const Products = () => {
                         </div>
                       )}
                       
-                      <div className="mt-4 flex justify-between items-center">
+                      <div className="mt-auto pt-4 flex justify-between items-center">
                         <Link 
                           to={`/products/${product._id}`}
                           className="text-blue-600 hover:text-blue-800 text-sm font-medium"

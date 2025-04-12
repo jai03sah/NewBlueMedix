@@ -27,7 +27,7 @@ const Logout = ({ onLogout }) => {
       
       navigate('/login');
     } catch (error) {
-      console.error('Logout error:', error);
+      // console.error('Logout error:', error);
       toast.error('Failed to logout');
     }
   };

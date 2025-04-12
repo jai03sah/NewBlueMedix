@@ -8,9 +8,17 @@ import { scrollToElement, handleHashLinkClick } from '../../utils/scrollUtils';
 const UserLayout = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
-  const user = JSON.parse(localStorage.getItem('user'));
+  
+  // Get user from localStorage
+  const getUserData = () => {
+    const userData = JSON.parse(localStorage.getItem('user'));
+    return userData;
+  };
+  
+  const user = getUserData();
 
   // Handle hash links when the component mounts or location changes
   useEffect(() => {
@@ -22,6 +30,33 @@ const UserLayout = ({ children }) => {
       }, 100);
     }
   }, [location]);
+  
+  // Update cart count when user data changes
+  useEffect(() => {
+    // Initial cart count
+    const userData = getUserData();
+    setCartCount(userData?.shopping_cart?.length || 0);
+    
+    // Listen for storage events (when cart is updated)
+    const handleStorageChange = () => {
+      const updatedUser = getUserData();
+      setCartCount(updatedUser?.shopping_cart?.length || 0);
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also check for updates every second (as a fallback)
+    const intervalId = setInterval(() => {
+      const updatedUser = getUserData();
+      setCartCount(updatedUser?.shopping_cart?.length || 0);
+    }, 1000);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(intervalId);
+    };
+  }, []);
+
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -67,7 +102,7 @@ const UserLayout = ({ children }) => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
                 <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                  {user?.shopping_cart?.length || 0}
+                  {cartCount}
                 </span>
               </Link>
               

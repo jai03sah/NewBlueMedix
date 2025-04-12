@@ -11,7 +11,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
-import CreateAdmin from './pages/CreateAdmin';
+import CreateAdmin from './pages/CreateAdmin'; 
 
 // Admin Pages
 import AdminDashboard from './pages/admin/Dashboard';
@@ -23,6 +23,7 @@ import CreateManager from './pages/admin/CreateManager';
 import CategoryManagement from './pages/admin/CategoryManagement';
 import OrderManagement from './pages/admin/OrderManagement';
 import ProductManagement from './pages/admin/ProductManagement';
+import AdminProductDetail from './pages/admin/ProductDetail';
 import FranchiseManagement from './pages/admin/FranchiseManagement';
 import FranchiseDetail from './pages/admin/FranchiseDetail';
 import FranchiseStockManagement from './pages/admin/FranchiseStockManagement';
@@ -105,13 +106,13 @@ function App() {
   return (
     <Router>
       <ToastContainer position="top-right" autoClose={5000} />
-      <Routes>
+      <Routes> 
         {/* Public Routes */} 
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/create-admin" element={<CreateAdmin />} />
+        <Route path="/create-admin" element={<CreateAdmin />} /> 
 
         {/* Admin Routes */}
         <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
@@ -123,6 +124,7 @@ function App() {
         <Route path="/admin/orders" element={<AdminRoute><OrderManagement /></AdminRoute>} />
         <Route path="/admin/orders/:orderId" element={<AdminRoute><OrderDetail /></AdminRoute>} />
         <Route path="/admin/products" element={<AdminRoute><ProductManagement /></AdminRoute>} />
+        <Route path="/admin/products/:productId" element={<AdminRoute><AdminProductDetail /></AdminRoute>} />
         <Route path="/admin/categories" element={<AdminRoute><CategoryManagement /></AdminRoute>} />
         <Route path="/admin/franchises" element={<AdminRoute><FranchiseManagement /></AdminRoute>} />
         <Route path="/admin/franchises/:franchiseId" element={<AdminRoute><FranchiseDetail /></AdminRoute>} />
@@ -184,11 +186,11 @@ const NotFound = () => (
       <button
         onClick={() => window.history.back()}
         className="mt-6 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-      >
+      > 
         Go Back
       </button>
     </div>
   </div>
 );
 
-export default App;
+export default App; 

@@ -29,7 +29,7 @@ const Orders = () => {
         } else {
           setError('Failed to fetch orders');
           toast.error('Failed to fetch orders');
-        }
+        } 
       } catch (error) {
         console.error('Fetch orders error:', error);
         setError('An error occurred while fetching your orders');

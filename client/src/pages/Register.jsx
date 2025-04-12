@@ -41,9 +41,9 @@ const Register = () => {
       );
 
       if (response.data.success) {
-        toast.success('Registration successful! Please log in.');
-        navigate('/login');
-      }
+        toast.success('Registration successful ! Please login to continue.');
+        navigate('/user/dashboard'); 
+      } 
     } catch (error) {
       console.error('Registration error:', error);
       toast.error(error.response?.data?.message || 'Registration failed. Please try again.');
@@ -162,6 +162,17 @@ const Register = () => {
                 className="font-medium text-blue-600 hover:text-blue-500"
               >
                 Sign in
+              </Link>
+            </p>
+          </div>
+          <div className="text-center">
+            <p className="text-sm text-gray-600">
+              Home page
+              <Link
+                to="/home"
+                className="font-medium text-blue-600 hover:text-blue-500"
+              >
+                Home Page
               </Link>
             </p>
           </div>

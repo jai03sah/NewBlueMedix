@@ -10,14 +10,14 @@ const ManagerInventory = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState([]); 
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
   const [editingProduct, setEditingProduct] = useState(null);
   const [editFormData, setEditFormData] = useState({
     quantity: 0,
     lowStockThreshold: 0
-  });
+  }); 
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'category'
   const [noProductsAssigned, setNoProductsAssigned] = useState(false); // Flag to check if admin has assigned products
 
@@ -77,7 +77,7 @@ const ManagerInventory = () => {
               console.log('No products available in the system');
             }
           }
-        } else {
+        } else { 
           // Products are assigned to this franchise
           setNoProductsAssigned(false);
           console.log('Products are assigned to this franchise');
@@ -97,7 +97,7 @@ const ManagerInventory = () => {
       if (categoriesResponse.data && categoriesResponse.data.success) {
         const fetchedCategories = categoriesResponse.data.categories || [];
         console.log('Initial categories check:', fetchedCategories.length, 'categories found');
-      }
+      } 
     } catch (error) {
       console.error('Error checking product availability:', error);
       // Don't show toast for this secondary request
@@ -105,7 +105,7 @@ const ManagerInventory = () => {
   };
 
   const fetchProducts = async () => {
-    try {
+    try { 
       setLoading(true);
       setError(null);
       const token = localStorage.getItem('token');
@@ -173,7 +173,7 @@ const ManagerInventory = () => {
           try {
             const productsResponse = await axios.get(
               `${process.env.REACT_APP_API_URL}/api/products?limit=1`,
-              {
+              { 
                 headers: {
                   Authorization: `Bearer ${token}`
                 }
@@ -187,21 +187,21 @@ const ManagerInventory = () => {
                 setProducts([]);
                 setTotalPages(1);
                 console.log('Products exist in system but none assigned to this franchise');
-              } else {
+              } else { 
                 // No products in the system at all
                 setNoProductsAssigned(true);
                 setProducts([]);
                 setTotalPages(1);
                 console.log('No products in the system at all');
-              }
-            }
+              } 
+            } 
           } catch (error) {
             console.error('Error checking product availability:', error);
             // Default to assuming no products assigned
             setNoProductsAssigned(true);
             setProducts([]);
             setTotalPages(1);
-          }
+          } 
           return;
         } else {
           setNoProductsAssigned(false);
@@ -266,11 +266,11 @@ const ManagerInventory = () => {
         if (transformedProducts.length === 0 && currentPage > 1) {
           // If we get an empty page and we're not on page 1, go back to page 1
           setCurrentPage(1);
-        }
+        } 
       } else {
         setError(response.data?.message || 'Failed to fetch inventory');
         toast.error('Failed to fetch inventory');
-      }
+      } 
     } catch (error) {
       console.error('Fetch inventory error:', error);
       handleApiError(error, 'An error occurred while fetching inventory');
@@ -314,7 +314,7 @@ const ManagerInventory = () => {
 
           if (statsResponse.data && statsResponse.data.success) {
             console.log('Category product counts:', statsResponse.data.categoriesWithCount);
-          }
+          } 
         } catch (statsError) {
           console.error('Error fetching category stats:', statsError);
         }
@@ -397,7 +397,7 @@ const ManagerInventory = () => {
         // Check if this category exists in our groupedProducts
         if (groupedProducts[product.category._id]) {
           groupedProducts[product.category._id].products.push(product);
-        } else {
+        } else { 
           console.log('Category not found in groupedProducts:', product.category._id);
           // If category doesn't exist in our groups, add it
           groupedProducts[product.category._id] = {
@@ -776,7 +776,7 @@ const ManagerInventory = () => {
                         </svg>
                       )}
                     </div>
-                  </th>
+                  </th> 
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Category
                   </th>
@@ -838,27 +838,27 @@ const ManagerInventory = () => {
                               </svg>
                             </div>
                           )}
-                        </div>
+                        </div> 
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">
                             {product.name}
                           </div>
                           <div className="text-sm text-gray-500">
-                            SKU: {product.sku || 'N/A'}
+                            SKU: {product.sku || 'N/A'} 
                           </div>
                         </div>
                       </div>
-                    </td>
+                    </td> 
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {product.category ? product.category.name : 'Uncategorized'}
-                    </td>
+                      {product.category ? product.category.name : 'Uncategorized'} 
+                    </td> 
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       ${product.price ? product.price.toFixed(2) : '0.00'}
-                    </td>
+                    </td> 
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {editingProduct === product._id ? (
                         <input
-                          type="number"
+                          type="number" 
                           name="quantity"
                           min="0"
                           value={editFormData.quantity}
@@ -868,12 +868,12 @@ const ManagerInventory = () => {
                       ) : (
                         product.quantity || 0
                       )}
-                    </td>
+                    </td> 
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStockStatusClass(product)}`}>
                         {getStockStatusText(product)}
                       </span>
-                    </td>
+                    </td> 
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {editingProduct === product._id ? (
                         <input
@@ -883,7 +883,7 @@ const ManagerInventory = () => {
                           value={editFormData.lowStockThreshold}
                           onChange={handleEditFormChange}
                           className="w-20 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-green-500"
-                        />
+                        /> 
                       ) : (
                         product.lowStockThreshold || 5
                       )}
