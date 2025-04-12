@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/NewBlueMedix/static/css/main.6b5cc131.css",
+    "main.js": "/NewBlueMedix/static/js/main.42b453d7.js",
+    "static/js/453.17c6e032.chunk.js": "/NewBlueMedix/static/js/453.17c6e032.chunk.js",
+    "index.html": "/NewBlueMedix/index.html",
+    "main.6b5cc131.css.map": "/NewBlueMedix/static/css/main.6b5cc131.css.map",
+    "main.42b453d7.js.map": "/NewBlueMedix/static/js/main.42b453d7.js.map",
+    "453.17c6e032.chunk.js.map": "/NewBlueMedix/static/js/453.17c6e032.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.6b5cc131.css",
+    "static/js/main.42b453d7.js"
+  ]
+}
