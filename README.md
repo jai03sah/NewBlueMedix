@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # BlueMedix API
 
 This repository contains the backend API for the BlueMedix medical supply management system.
@@ -306,3 +307,6 @@ The project is divided into two main parts:
 ## License
 
 This project is licensed under the MIT License.
+=======
+# NewBlueMedix
+>>>>>>> f844a43745461d74f0827a7dec326cf3b51378e9
